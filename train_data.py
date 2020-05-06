@@ -68,11 +68,10 @@ def main():
     batch_scale = tf.Variable(2.0, tf.float32, shape=[])
     
     # assign value to tensor variables
-    mu_ref = 0.95
-    mu0 = tf.Variable(mu_ref, tf.float32, shape=[])
-    mu1 = tf.Variable(1.0, tf.float32, shape=[])
-    theta0 = tf.Variable(0.0, tf.float32, shape=[])
-    theta1 = tf.Variable(0.0, tf.float32, shape=[])
+    # default: mu = 1, theta = 0
+    mu = tf.Variable(1.0, tf.float32, shape=[])
+    theta = tf.Variable(0.0, tf.float32, shape=[])
+
 
     # assign value to tensor constants
     epsilon = tf.Variable(1e-9, tf.float32)
@@ -84,18 +83,18 @@ def main():
             tfp.distributions.Poisson(
                 rate=tf.maximum(
                     mu * sig + bkg_noshift \
-                    + tf.maximum(theta, null) * (bkg_upshift - bkg_noshift) \
-                    + tf.minimum(theta, null) * (bkg_noshift - bkg_downshift), epsilon
-                    )).prob(sig + bkg_noshift), epsilon)) # was ist .prob() ???
+                    #+ tf.maximum(theta, null) * (bkg_upshift - bkg_noshift) \
+                    #+ tf.minimum(theta, null) * (bkg_noshift - bkg_downshift)\
+                    , epsilon
+                    )).prob(sig + bkg_noshift), epsilon)) # mittlere erwartung, die optimiert werden soll
 
 
     ####
     #### First define Loss, than define gradient, than minimize via grad()
     ####
 
-    def loss_dnll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down):
+    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down):
         nll0 = 0    # initial NLL value
-        nll1 = 0    # initial NLL value
         for i, right, left in zip(range(len(right_edges)), right_edges, left_edges):
             f_signal_noshift = tf.squeeze(model(x_sig))
             f_background_noshift = tf.squeeze(model(x_bkg))
@@ -111,21 +110,17 @@ def main():
             bkg_downshift = tf.reduce_sum(mask_algo(f_background_downshift, right, left))
 
             # NLL
-            nll0 += nll(mu0, theta0, sig, bkg, bkg_upshift, bkg_downshift)
-            nll1 += nll(mu1, theta1, sig, bkg, bkg_upshift, bkg_downshift)
+            nll0 += nll(mu, theta, sig, bkg, bkg_upshift, bkg_downshift)
 
-        # Constraints -- why ???
-        nll0 += -1 * tf.math.log(tf.maximum(tfp.distributions.Normal(loc=0, scale=1).prob(theta0), epsilon))
-        nll1 += -1 * tf.math.log(tf.maximum(tfp.distributions.Normal(loc=0, scale=1).prob(theta1), epsilon))
-
-        # use DeltaNLL as loss
-        dnll = tf.constant(2, tf.float32) * (nll0 - nll1)
-        loss_value = dnll
+        # Normalized gaussioan constraining the nuisance (see paper) 
+        nll0 += -1 * tf.math.log(tf.maximum(tfp.distributions.Normal(loc=0, scale=1).prob(theta), epsilon))
+        loss_value = nll0
+        
         return loss_value
 
     def grad_dnll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down):
         with tf.GradientTape() as tape:
-            loss_value = loss_dnll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down)
+            loss_value = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down)
         return loss_value, tape.gradient(loss_value, model.trainable_variables)
 
     optimizer = tf.keras.optimizers.Adam()
@@ -147,16 +142,16 @@ def main():
     for epoch in range(1, 300):
         steps.append(epoch)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        current_loss = loss_dnll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift).numpy()
+        current_loss = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift).numpy()
         loss_train.append(current_loss)
-        if current_loss > min_loss:
+        if current_loss >= min_loss:
             patience -= 1
         else:
             min_loss = current_loss
             patience = max_patience
         
         if epoch % 10 == 0 or patience == 0:
-            print("Step: {:02d},         Loss: {:.2f}".format(optimizer.iterations.numpy(), loss_dnll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift).numpy()))
+            print("Step: {:02d},         Loss: {:.2f}".format(optimizer.iterations.numpy(), loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift).numpy()))
             
         if patience == 0:
             print("Trigger early stopping in epoch {}.".format(epoch))
