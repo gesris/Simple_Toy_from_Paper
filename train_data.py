@@ -124,10 +124,18 @@ def main():
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
                     loss_value = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, mu, theta)
+                    #print("NLL:\n", loss_value.numpy())
+
                     gradnll = first_order.gradient(loss_value, parameters)
+                    #print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
+
                     hessian_rows = [second_order.gradient(g, parameters) for g in gradnll]
                     hesse = tf.stack(hessian_rows, axis=1)
+                    #print("HESSE MATRIX:\n", hesse.numpy())
+
                     variance = tf.linalg.inv(hesse)
+                    #print("VARIANZ:\n", variance.numpy())
+
                     poi = variance[0][0]
                     standard_deviation = tf.math.sqrt(poi)
                     backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
@@ -142,20 +150,17 @@ def main():
 
     steps = []
     loss_train = []
-    max_patience = 34
+    max_patience = 10
     patience = max_patience
     
     # initial training step:
     loss_value, grads = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
     min_loss = loss_value
 
-    for epoch in range(0, 30):
-        #current_loss, grads = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-
+    for epoch in range(1, 30):
         steps.append(epoch)
         print(epoch)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        #current_loss = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift).numpy()
         current_loss, _ = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
 
         loss_train.append(current_loss)
