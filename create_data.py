@@ -24,32 +24,39 @@ def make_bkg(num_events, shift):
 
 def make_dataset(num_events, shift):
     num_events = num_events // 2
-    x = np.vstack(make_sig(num_events))
-    y = np.vstack(make_bkg(num_events, shift))
-    return x, y
+    x1 = np.vstack(make_sig(num_events))
+    x2 = np.vstack(make_bkg(num_events, shift))
+    y = np.hstack([np.ones(num_events), np.zeros(num_events)])
+    return x1, x2, y
 
 
 # Create training dataset
-num_train = 100000
+num_train = 10000
 total_shift = 1.0
 signal_exp = 1000
 background_exp = 1000
 shift = np.array([0.0, 1.0])
+signal_scale = signal_exp / float(num_train)
+background_scale = background_exp / float(num_train)
 
 
 # dataset with events containing each x-/y-coordinates
-x_train_noshift_signal, x_train_noshift_background = make_dataset(num_train, 0)
-x_train_upshift_signal, x_train_upshift_background = make_dataset(num_train, shift)
-x_train_downshift_signal, x_train_downshift_background = make_dataset(num_train, -shift)
-x_train_signal_tot = x_train_noshift_signal
+x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
+x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
+x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
 
+
+# weight for normalization
+w_train = np.ones(y_train.shape)
+w_train[y_train == 1] = signal_scale
+w_train[y_train == 0] = background_scale
 
 # summerize events with 2D histogram
 number_of_bins = 20
 scale = 4
 bins = np.linspace(-scale, scale, number_of_bins)
 
-hist_x_train_signal = np.histogram2d(x_train_signal_tot[:, 1], x_train_signal_tot[:, 0], bins= [bins,bins])
+hist_x_train_signal = np.histogram2d(x_train_noshift_signal[:, 1], x_train_noshift_signal[:, 0], bins= [bins,bins])
 hist_x_train_noshift_background = np.histogram2d(x_train_noshift_background[:, 1], x_train_noshift_background[:, 0], bins= [bins,bins])
 hist_x_train_upshift_background = np.histogram2d(x_train_upshift_background[:, 1], x_train_upshift_background[:, 0], bins= [bins,bins])
 hist_x_train_downshift_background = np.histogram2d(x_train_downshift_background[:, 1], x_train_downshift_background[:, 0], bins= [bins,bins])
@@ -78,5 +85,5 @@ def makeplot(histograms):
 makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
 
 # save training data into pickle
-pickle.dump([x_train_signal_tot, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background], open("train.pickle", "wb"))
+pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
 

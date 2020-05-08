@@ -38,7 +38,7 @@ def main():
     #### Load data
     ####
 
-    x_train_signal_tot, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background = pickle.load(open("train.pickle", "rb"))
+    x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y, w = pickle.load(open("train.pickle", "rb"))
     
     ####
     #### Setup model
@@ -50,12 +50,17 @@ def main():
     ])
 
     batch_len = None
-    x_signal_noshift = tf.Variable(x_train_signal_tot, tf.float32, shape=[batch_len, 2])
+
+    x_train_noshift = tf.Variable(np.vstack([x_train_noshift_signal, x_train_noshift_background]), tf.float32, shape=[batch_len, 2])
+    x_train_upshift = tf.Variable(np.vstack([x_train_upshift_signal, x_train_upshift_background]), tf.float32, shape=[batch_len, 2])
+    x_train_downshift = tf.Variable(np.vstack([x_train_downshift_signal, x_train_downshift_background]), tf.float32, shape=[batch_len, 2])
+
+    x_signal_noshift = tf.Variable(x_train_noshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
 
-
+    
     ####
     #### Define loss
     ####
@@ -65,18 +70,18 @@ def main():
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
     mask_algo = binfunction
-    batch_scale = tf.Variable(2.0, tf.float32, shape=[])
+    batch_scale = tf.constant(2.0, tf.float32, shape=[])
     
     # assign value to tensor variables
     # default: mu = 1, theta = 0
-    mu = tf.Variable(1.0, tf.float32, shape=[])
-    theta = tf.Variable(0.0, tf.float32, shape=[])
+    mu = tf.constant(1.0, tf.float32, shape=[])
+    theta = tf.constant(0.0, tf.float32, shape=[])
 
 
     # assign value to tensor constants
-    epsilon = tf.Variable(1e-9, tf.float32)
-    null = tf.Variable(0.0, tf.float32)
-    one = tf.Variable(1.0, tf.float32)
+    epsilon = tf.constant(1e-9, tf.float32)
+    null = tf.constant(0.0, tf.float32)
+    one = tf.constant(1.0, tf.float32)
 
     def nll(mu, theta, sig, bkg_noshift, bkg_upshift, bkg_downshift):
         return -1 * tf.math.log(tf.maximum(
@@ -93,21 +98,21 @@ def main():
     #### First define Loss, than define gradient, than minimize via grad()
     ####
 
-    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, mu, theta):
+    def loss_nll(model, x_noshift, x_upshift, x_downshift, mu, theta):
         nll0 = 0    # initial NLL value
         for i, right, left in zip(range(len(right_edges)), right_edges, left_edges):
-            f_signal_noshift = tf.squeeze(model(x_sig))
-            f_background_noshift = tf.squeeze(model(x_bkg))
-            f_background_upshift = tf.squeeze(model(x_bkg_up))
-            f_background_downshift = tf.squeeze(model(x_bkg_down))
+            f_noshift = tf.squeeze(model(x_noshift))
+            f_upshift = tf.squeeze(model(x_upshift))
+            f_downshift = tf.squeeze(model(x_downshift))
+
 
             # declare unshifted models as histograms
-            sig = tf.reduce_sum(mask_algo(f_signal_noshift, right, left))
-            bkg = tf.reduce_sum(mask_algo(f_background_noshift, right, left))
+            sig = tf.reduce_sum(mask_algo(f_noshift, right, left) * y * w * batch_scale)
+            bkg = tf.reduce_sum(mask_algo(f_noshift, right, left) * (one - y) * w * batch_scale)
 
             # declare shifted models as histograms
-            bkg_upshift = tf.reduce_sum(mask_algo(f_background_upshift, right, left))
-            bkg_downshift = tf.reduce_sum(mask_algo(f_background_downshift, right, left))
+            bkg_upshift = tf.reduce_sum(mask_algo(f_upshift, right, left) * (one - y) * w * batch_scale)
+            bkg_downshift = tf.reduce_sum(mask_algo(f_downshift, right, left) * (one - y) * w * batch_scale)
 
             # NLL
             nll0 += nll(mu, theta, sig, bkg, bkg_upshift, bkg_downshift)
@@ -117,13 +122,13 @@ def main():
         loss_value = nll0
         return loss_value
 
-    def grad_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters):
+    def grad_sd(model, x_train_noshift, x_train_upshift, x_train_dwonshift, parameters):
         mu = parameters[0]
         theta = parameters[1]
         with tf.GradientTape() as backprop:
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
-                    loss_value = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, mu, theta)
+                    loss_value = loss_nll(model, x_train_noshift, x_train_upshift, x_train_downshift, mu, theta)
                     #print("NLL:\n", loss_value.numpy())
 
                     gradnll = first_order.gradient(loss_value, parameters)
@@ -141,6 +146,21 @@ def main():
                     backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
         return standard_deviation, backpropagation
 
+    def loss_ce(model, x):
+        f = model(x)
+        batch_size = x.shape[1]
+        ce_loss = -tf.math.reduce_mean(
+            y * tf.math.log(tf.maximum(f, epsilon)) * w * batch_size \
+            + (one - y) * tf.math.log(tf.maximum(one - f, epsilon)) * w * batch_size)
+        return ce_loss
+
+    def grad_ce(model, x):
+        with tf.GradientTape() as grad:
+            loss_value = loss_ce(model, x)
+            d_ce = grad.gradient(loss_value, model.trainable_variables)
+        return loss_value, d_ce
+
+
     optimizer = tf.keras.optimizers.Adam()
 
 
@@ -154,15 +174,15 @@ def main():
     patience = max_patience
     
     # initial training step:
-    loss_value, grads = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+    #loss_value, grads = grad_sd(model, x_train_noshift, x_train_upshift, x_train_downshift, [mu, theta])
+    loss_value, grads = grad_ce(model, x_train_noshift)
     min_loss = loss_value
 
-    for epoch in range(1, 30):
+    for epoch in range(1, 300):
         steps.append(epoch)
-        print(epoch)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        current_loss, _ = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-
+        #current_loss, _ = grad_sd(model, x_train_noshift, x_train_upshift, x_train_downshift, [mu, theta])
+        current_loss, _ = grad_ce(model, x_train_noshift)
         loss_train.append(current_loss)
         if current_loss >= min_loss:
             patience -= 1
@@ -171,8 +191,9 @@ def main():
             patience = max_patience
         
         #if epoch % 10 == 0 or patience == 0:
-        print("Step: {:02d},         Loss: {:.2f}".format(optimizer.iterations.numpy(), current_loss))
-            
+        #print("Step: {:02d},         Loss: {:.2f}".format(epoch, current_loss))
+        print("Step: {:02d},         Loss: {}".format(epoch, current_loss))
+
         if patience == 0:
             print("Trigger early stopping in epoch {}.".format(epoch))
             break
@@ -213,6 +234,39 @@ def main():
     plt.ylim(limit[0], limit[1])
     #plt.savefig("/home/risto/Masterarbeit/Python/significance_plots/NN_function_{}.png".format(picture_index), bbox_inches = "tight")
     plt.show()
+    
+    # summerize events with 2D histogram
+    number_of_bins = 20
+    scale = 4
+    bins = np.linspace(-scale, scale, number_of_bins)
+
+    hist_x_train_signal = np.histogram2d(x_train_noshift_signal[:, 1], x_train_noshift_signal[:, 0], bins= [bins,bins])
+    hist_x_train_noshift_background = np.histogram2d(x_train_noshift_background[:, 1], x_train_noshift_background[:, 0], bins= [bins,bins])
+    hist_x_train_upshift_background = np.histogram2d(x_train_upshift_background[:, 1], x_train_upshift_background[:, 0], bins= [bins,bins])
+    hist_x_train_downshift_background = np.histogram2d(x_train_downshift_background[:, 1], x_train_downshift_background[:, 0], bins= [bins,bins])
+
+
+    def makeplot(histograms):
+        limit = [-4, 4]
+        plt.figure(figsize=(6, 6))
+        cmap_sig = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C0"] * 3)
+        cmap_bkg = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C1"] * 3)
+        cmap = [cmap_sig, cmap_bkg, cmap_bkg, cmap_bkg]
+        color=["C0", "C1", "C1",  "C1"]
+        label=["Signal", "Background", "Background upshift", "Background downshift"]
+        alpha = [0.8, 0.8, 0.4, 0.4]
+        for i in range(0, len(histograms)):
+            plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], alpha=alpha[i])
+            plt.plot([-999], [-999], color=color[i], label=label[i])
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.xlim(limit[0], limit[1])
+        plt.ylim(limit[0], limit[1])
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
+        #plt.savefig("/home/risto/Masterarbeit/test.png", bbox_inches = "tight")
+        plt.show()
+
+    makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
 
 if __name__ == "__main__":
     main()
