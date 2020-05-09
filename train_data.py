@@ -65,7 +65,7 @@ def main():
     #### Define loss
     ####
     
-    bins = np.linspace(-0.01, 1.01, 3)
+    bins = np.linspace(0.0, 1.0, 3)
     bin_edges = bins
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
@@ -83,11 +83,13 @@ def main():
     null = tf.constant(0.0, tf.float32)
     one = tf.constant(1.0, tf.float32)
 
-    def nll_mu(mu, sig, bkg_noshift, bkg_upshift, bkg_downshift):
-        return -1 * tf.math.log(tf.maximum(
+    def nll_mu(mu, theta, sig, bkg_noshift):
+        value = -1 * tf.math.log(tf.maximum(
             tfp.distributions.Poisson(
-                rate=tf.maximum(mu * sig + bkg_noshift, epsilon)).prob(sig + bkg_noshift), epsilon)) # mittlere erwartung, die optimiert werden soll
-
+                rate=tf.maximum(mu * sig + bkg_noshift, epsilon)
+            ).prob(sig + bkg_noshift)\
+        , epsilon)) 
+        return value
 
 
     def nll(mu, theta, sig, bkg_noshift, bkg_upshift, bkg_downshift):
@@ -105,95 +107,96 @@ def main():
     #### First define Loss, than define gradient, than minimize via grad()
     ####
 
-    def loss_nll_mu(model, x_noshift, x_upshift, x_downshift, mu):
-        nll0 = 0    # initial NLL value
-        for i, right, left in zip(range(len(right_edges)), right_edges, left_edges):
-            f_noshift = tf.squeeze(model(x_noshift))
-            f_upshift = tf.squeeze(model(x_upshift))
-            f_downshift = tf.squeeze(model(x_downshift))
+    def hist(x, bins):
+        counts = []
+        # splits histogram in bins regarding their left and right edges
+        # zip function puts left and right edge together in one iterable array
+        for right_edge, left_edge in zip(bins[1:], bins[:-1]):
+            # sums up all 1 entries of each bin 
+            counts.append(tf.reduce_sum(binfunction(x, right_edge, left_edge)))
+        return tf.squeeze(tf.stack(counts))
 
 
-            # declare unshifted models as histograms
-            sig = tf.reduce_sum(mask_algo(f_noshift, right, left) * y * w * batch_scale)
-            bkg = tf.reduce_sum(mask_algo(f_noshift, right, left) * (one - y) * w * batch_scale)
+    def loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_dwonshift, mu, theta):
+        nll0 = 0
+        f_signal_noshift = tf.squeeze(model(x_signal_noshift))
+        f_background_noshift = tf.squeeze(model(x_background_noshift))
+        f_background_upshift = tf.squeeze(model(x_background_upshift))
+        f_background_downshift = tf.squeeze(model(x_background_downshift))
 
-            # declare shifted models as histograms
-            bkg_upshift = tf.reduce_sum(mask_algo(f_upshift, right, left) * (one - y) * w * batch_scale)
-            bkg_downshift = tf.reduce_sum(mask_algo(f_downshift, right, left) * (one - y) * w * batch_scale)
+        #sig = hist((one - f_signal_noshift), bins)
+        sig = hist(f_signal_noshift, bins)
+        bkg = hist(f_background_noshift, bins)
+        bkg_up = hist(f_background_upshift, bins)
+        bkg_down = hist(f_background_downshift, bins)
 
-            # NLL
-            nll0 += nll_mu(mu, sig, bkg, bkg_upshift, bkg_downshift)
-        loss_value = nll0
-        return loss_value
+        print("\nSIGNAL:          {:4.2f},     {:4.2f}".format(sig[0].numpy(), sig[1].numpy()))
+        print("BACKGROUND:      {:4.2f},     {:4.2f}".format(bkg[0].numpy(), bkg[1].numpy()))
+        print("BACKGROUND UP:   {:4.2f},     {:4.2f}".format(bkg_up[0].numpy(), bkg_up[1].numpy()))
+        print("BACKGROUND DOWN: {:4.2f},     {:4.2f}\n".format(bkg_down[0].numpy(), bkg_down[1].numpy()))
 
-    def loss_nll(model, x_noshift, x_upshift, x_downshift, mu, theta):
-        nll0 = 0    # initial NLL value
-        for i, right, left in zip(range(len(right_edges)), right_edges, left_edges):
-            f_noshift = tf.squeeze(model(x_noshift))
-            f_upshift = tf.squeeze(model(x_upshift))
-            f_downshift = tf.squeeze(model(x_downshift))
-
-
-            # declare unshifted models as histograms
-            sig = tf.reduce_sum(mask_algo(f_noshift, right, left) * y * w * batch_scale)
-            bkg = tf.reduce_sum(mask_algo(f_noshift, right, left) * (one - y) * w * batch_scale)
-
-            # declare shifted models as histograms
-            bkg_upshift = tf.reduce_sum(mask_algo(f_upshift, right, left) * (one - y) * w * batch_scale)
-            bkg_downshift = tf.reduce_sum(mask_algo(f_downshift, right, left) * (one - y) * w * batch_scale)
-
-            # NLL
-            nll0 += nll(mu, theta, sig, bkg, bkg_upshift, bkg_downshift)
-
-        # Normalized gaussioan constraining the nuisance (see paper) 
+        nll0 += nll(mu, theta, sig[1], bkg[1], bkg_up[1], bkg_down[1])
+        nll0 += nll(mu, theta, sig[0], bkg[0], bkg_up[0], bkg_down[0])
+        
         nll0 += -1 * tf.math.log(tf.maximum(tfp.distributions.Normal(loc=0, scale=1).prob(theta), epsilon))
+        
+        print("NLL: {}\n".format(nll0.numpy()))
+        
         loss_value = nll0
         return loss_value
 
-    def grad_sd_mu(model, x_train_noshift, x_train_upshift, x_train_dwonshift, parameters):
-        mu = parameters
+    def grad_sd_mu(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, parameters):
+        mu = parameters[0]
+        theta = parameters[1]
         with tf.GradientTape() as backprop:
-            with tf.GradientTape(persistent=True) as second_order:
+            with tf.GradientTape() as second_order:
                 with tf.GradientTape() as first_order:
-                    loss_value = loss_nll_mu(model, x_train_noshift, x_train_upshift, x_train_downshift, mu)
-                    print("NLL:\n", loss_value.numpy())
+                    #loss_value = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, mu, theta)
+                    loss_value = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, mu, theta)
+                    #print("NLL:\n", loss_value.numpy())
 
-                    gradnll = first_order.gradient(loss_value, parameters)
-                    print("GRAD NLL:\n dMU: {}".format(gradnll.numpy()))
+                    gradnll = first_order.gradient(loss_value, mu)
+                    #print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
 
-                    gradgradnll = second_order.gradient(gradnll, parameters)
-                    print("GRADGRAD NLL:\n", gradgradnll.numpy())
+                    gradgradnll = second_order.gradient(gradnll, mu)
 
                     poi = gradgradnll
                     standard_deviation = tf.math.sqrt(poi)
                     backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
         return standard_deviation, backpropagation
 
-    def grad_sd(model, x_train_noshift, x_train_upshift, x_train_dwonshift, parameters):
+    def grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, parameters):
         mu = parameters[0]
         theta = parameters[1]
         with tf.GradientTape() as backprop:
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
-                    loss_value = loss_nll(model, x_train_noshift, x_train_upshift, x_train_downshift, mu, theta)
-                    #print("NLL:\n", loss_value.numpy())
+                    loss_value = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, mu, theta)
+                    print("NLL:\n", loss_value.numpy())
 
                     gradnll = first_order.gradient(loss_value, parameters)
-                    #print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
+                    print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
 
                     hessian_rows = [second_order.gradient(g, parameters) for g in gradnll]
                     hesse = tf.stack(hessian_rows, axis=1)
-                    #print("HESSE MATRIX:\n", hesse.numpy())
+                    print("HESSE MATRIX:\n", hesse.numpy())
 
                     variance = tf.linalg.inv(hesse)
-                    #print("VARIANZ:\n", variance.numpy())
+                    print("VARIANZ:\n", variance.numpy())
 
                     poi = variance[0][0]
                     standard_deviation = tf.math.sqrt(poi)
                     backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
         return standard_deviation, backpropagation
-
     
+    def grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, parameters):
+        mu = parameters[0]
+        theta = parameters[1]
+        with tf.GradientTape() as grad:
+            loss_value = loss_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, mu, theta)
+            gradnll = grad.gradient(loss_value, model.trainable_variables)
+        return loss_value, gradnll
+
     def loss_ce(model, x_sig, x_bkg):
         f_sig = model(x_sig)
         f_bkg = model(x_bkg)
@@ -217,21 +220,22 @@ def main():
 
     steps = []
     loss_train = []
-    max_patience = 10
+    max_patience = 40
     patience = max_patience
     
     # initial training step:
-    #loss_value, grads = grad_sd(model, x_train_noshift, x_train_upshift, x_train_downshift, [mu, theta])
-    #loss_value, grads = grad_sd_mu(model, x_train_noshift, x_train_upshift, x_train_downshift, mu)
-    loss_value, grads = grad_ce(model, x_signal_noshift, x_background_noshift)
+    #loss_value, grads = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+    loss_value, grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+    #loss_value, grads = grad_ce(model, x_signal_noshift, x_background_noshift)
     min_loss = loss_value
+    print(loss_value.numpy())
 
-    for epoch in range(1, 300):
+    for epoch in range(1, 15):
         steps.append(epoch)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        #current_loss, _ = grad_sd(model, x_train_noshift, x_train_upshift, x_train_downshift, [mu, theta])
-        #current_loss, _ = grad_sd_mu(model, x_train_noshift, x_train_upshift, x_train_downshift, mu)
-        current_loss, _ = grad_ce(model, x_signal_noshift, x_background_noshift)
+        #current_loss, _ = grad_nll(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+        current_loss, _ = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+        #current_loss, _ = grad_ce(model, x_signal_noshift, x_background_noshift)
         loss_train.append(current_loss)
         if current_loss >= min_loss:
             patience -= 1
@@ -240,8 +244,7 @@ def main():
             patience = max_patience
         
         #if epoch % 10 == 0 or patience == 0:
-        #print("Step: {:02d},         Loss: {:.2f}".format(epoch, current_loss))
-        print("Step: {:02d},         Loss: {}".format(epoch, current_loss))
+        print("Step: {:02d},         Loss: {:.4f}".format(epoch, current_loss))
 
         if patience == 0:
             print("Trigger early stopping in epoch {}.".format(epoch))
