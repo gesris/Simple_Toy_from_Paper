@@ -1,7 +1,7 @@
 import numpy as np
 np.random.seed(1234)
 import tensorflow as tf
-tf.random.set_seed(1234)   
+#tf.random.set_seed(1234)   
 import tensorflow_probability as tfp
 import pickle
 import matplotlib
