@@ -60,12 +60,21 @@ def main():
     x_train_upshift = tf.Variable(np.vstack([x_train_upshift_signal, x_train_upshift_background]), tf.float32, shape=[batch_len, 2])
     x_train_downshift = tf.Variable(np.vstack([x_train_downshift_signal, x_train_downshift_background]), tf.float32, shape=[batch_len, 2])
 
+    # Training data
     x_signal_noshift = tf.Variable(x_train_noshift_signal, tf.float32, shape=[batch_len, 2])
     x_signal_upshift = tf.Variable(x_train_upshift_signal, tf.float32, shape=[batch_len, 2])
     x_signal_downshift = tf.Variable(x_train_downshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
+
+    # Validation data
+    x_signal_noshift_val = tf.Variable(x_val_noshift_signal, tf.float32, shape=[batch_len, 2])
+    x_signal_upshift_val = tf.Variable(x_val_upshift_signal, tf.float32, shape=[batch_len, 2])
+    x_signal_downshift_val = tf.Variable(x_val_downshift_signal, tf.float32, shape=[batch_len, 2])
+    x_background_noshift_val = tf.Variable(x_val_noshift_background, tf.float32, shape=[batch_len, 2])
+    x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
+    x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
 
     
     ####
@@ -135,12 +144,7 @@ def main():
         
         nll0 -= tfp.distributions.Normal(loc=0, scale=1).log_prob(theta)
         loss_value = nll0
-        return loss_value
-
-    def get_constraint(nll, parameters):
-        with tf.GradientTape(persistent=True) as second_order:
-            with tf.GradientTape as first_order:
-                pass
+        return loss_value * 0.01
 
 
     def grad_sd(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, parameters):
@@ -150,7 +154,7 @@ def main():
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
                     loss_value = loss_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, mu, theta)
-                    print("NLL:\n", loss_value.numpy())
+                    #print("NLL:\n", loss_value.numpy())
 
                     gradnll = first_order.gradient(loss_value, parameters)
                     #print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
@@ -166,7 +170,7 @@ def main():
 
                     poi = variance[0][0]
                     standard_deviation = tf.math.sqrt(poi)
-                    backpropagation = backprop.gradient(loss_value, model.trainable_variables)
+                    backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
         return standard_deviation, backpropagation
     
     def grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, parameters):
@@ -186,29 +190,33 @@ def main():
 
     steps = []
     loss_train = []
+    loss_val = []
     max_patience = 10
     patience = max_patience
     
     # initial training step:
-    loss_value, grads = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-    #loss_value, grads = grad_sd(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+    #loss_value, grads = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+    loss_value, grads = grad_sd(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
     min_loss = loss_value
     print(loss_value.numpy())
 
     for epoch in range(1, 100):
         steps.append(epoch)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        current_loss, _ = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-        #current_loss, _ = grad_sd(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+        #current_loss, _ = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
+        current_loss, _ = grad_sd(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
         loss_train.append(current_loss)
-        if current_loss >= min_loss:
+        current_loss_val, _ = grad_sd(model, x_signal_noshift_val, x_signal_upshift_val, x_signal_downshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta])
+        loss_val.append(current_loss_val)
+
+        if current_loss_val >= min_loss:
             patience -= 1
         else:
-            min_loss = current_loss
+            min_loss = current_loss_val
             patience = max_patience
         
         if epoch % 10 == 0 or patience == 0:
-            print("Step: {:02d},         Loss: {:.4f}".format(epoch, current_loss))
+            print("Step: {:02d},         Loss: {:.4f}".format(epoch, current_loss_val))
 
         if patience == 0:
             print("Trigger early stopping in epoch {}.".format(epoch))
@@ -254,6 +262,7 @@ def main():
 
     plt.figure()
     plt.plot(steps, loss_train)
+    plt.plot(steps, loss_val)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
 
