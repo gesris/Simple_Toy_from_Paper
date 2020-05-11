@@ -1,7 +1,7 @@
 import numpy as np
 np.random.seed(1234)
 import tensorflow as tf
-tf.random.set_seed(1234)   
+#tf.random.set_seed(1234)   
 import tensorflow_probability as tfp
 import pickle
 import matplotlib
@@ -196,7 +196,7 @@ def main():
 
                     poi = variance[0][0]
                     standard_deviation = tf.math.sqrt(poi)
-                    backpropagation = backprop.gradient(loss_value_nll, model.trainable_variables)
+                    backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
         return standard_deviation, backpropagation
 
 
