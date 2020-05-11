@@ -120,7 +120,7 @@ def main():
         print("BACKGROUND:      {:4.2f},     {:4.2f}".format(bkg[0].numpy(), bkg[1].numpy()))
 
         ## Calculate NLL with nuisance
-        for i in range(0, 2):
+        for i in range(0, len(sig)):
             exp = mu_nll_no_nuisance * sig[i] + bkg[i]
             obs = sig[i] + bkg[i]
 
@@ -129,24 +129,27 @@ def main():
         return loss_value_no_nuisance
 
 
-    def grad_sd_no_nuisance(parameters):
+    def sd_no_nuisance(parameters):
         mu_sd_no_nuisance = parameters[0]
         theta_sd_no_nuisance = parameters[1]
+        with tf.GradientTape(persistent=True) as second_order:
+            with tf.GradientTape() as first_order:
+                loss_value_nll = loss_nll_no_nuisance([mu_sd_no_nuisance, theta_sd_no_nuisance])
+                #print("NLL:\n", loss_value_nll.numpy())
+
+                gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
+                #print("GRAD NLL:\n dMU: {}".format(gradnll.numpy()))
+
+                gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
+                covariance = 1 / gradgradnll
+
+                standard_deviation = tf.math.sqrt(covariance)
+        return standard_deviation
+
+    def grad_sd(model, parameters):
         with tf.GradientTape() as backprop:
-            with tf.GradientTape(persistent=True) as second_order:
-                with tf.GradientTape() as first_order:
-                    loss_value_nll = loss_nll_no_nuisance([mu_sd_no_nuisance, theta_sd_no_nuisance])
-                    print("NLL:\n", loss_value_nll.numpy())
-
-                    gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
-                    print("GRAD NLL:\n dMU: {}".format(gradnll.numpy()))
-
-                    gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
-                    covariance = 1 / gradgradnll
-
-                    standard_deviation = tf.math.sqrt(covariance)
-                    backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
-        return standard_deviation, backpropagation
+            loss = sd_no_nuisance(parameters)
+            backpropagation = backprop.gradient(loss, model.trainable_variables)
     
 
     ## choose optimizer for training
@@ -164,21 +167,21 @@ def main():
     patience = max_patience
     
     ### initial training step:
-    initial_loss, grads = grad_sd_no_nuisance([mu, theta])
-    min_loss = initial_loss
-    print(initial_loss.numpy())
+    min_loss = sd_no_nuisance([mu, theta])
 
     for epoch in range(1, 100):
         steps.append(epoch)
 
+        
+        current_loss= sd_no_nuisance([mu, theta])
+        loss_train_list.append(current_loss)
+        grads = grad_sd(model, [mu, theta])
+
         ## apply gradient step
         optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        
-        ## save current loss of training and validation
-        current_loss, _ = grad_sd_no_nuisance([mu, theta])
-        loss_train_list.append(current_loss)
 
-        current_loss_val, _ = grad_sd_no_nuisance([mu, theta])
+
+        current_loss_val, _ = sd_no_nuisance([mu, theta])
         loss_validation_list.append(current_loss_val)
 
         # Stop conditions

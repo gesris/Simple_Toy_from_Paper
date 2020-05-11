@@ -73,7 +73,7 @@ def main():
         with tf.GradientTape() as grad:
             loss_value = loss_ce(model, x_sig, x_bkg)
             d_ce = grad.gradient(loss_value, model.trainable_variables)
-        return loss_value, d_ce
+        return d_ce
 
     optimizer = tf.keras.optimizers.Adam()
 
@@ -88,15 +88,17 @@ def main():
     patience = max_patience
     
     # initial training step:
-    loss_value, grads = grad_ce(model, x_signal_noshift, x_background_noshift)
-    min_loss = loss_value
-    print(loss_value.numpy())
+    min_loss = loss_ce(model, x_signal_noshift, x_background_noshift)
 
     for epoch in range(1, 300):
         steps.append(epoch)
-        optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        current_loss, _ = grad_ce(model, x_signal_noshift, x_background_noshift)
+
+        grads = grad_ce(model, x_signal_noshift, x_background_noshift)
+        current_loss = loss_ce(model, x_signal_noshift, x_background_noshift)
         loss_train.append(current_loss)
+
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
+
         if current_loss >= min_loss:
             patience -= 1
         else:
