@@ -43,9 +43,16 @@ def main(loss):
     x_noshift_background, x_upshift_background, x_downshift_background,\
     y, w = pickle.load(open("train.pickle", "rb"))
     
-    x_train_noshift_signal, x_val_noshift_signal, x_train_upshift_signal, x_val_upshift_signal, x_train_downshift_signal, x_val_downshift_signal,\
-    x_train_noshift_background, x_val_noshift_background, x_train_upshift_background, x_val_upshift_background, x_train_downshift_background, x_val_downshift_background = train_test_split(
-    x_noshift_signal, x_upshift_signal, x_downshift_signal, x_noshift_background, x_upshift_background, x_downshift_background, test_size=0.5, random_state=1234)
+    x_train_noshift_signal, x_val_noshift_signal,\
+    x_train_upshift_signal, x_val_upshift_signal,\
+    x_train_downshift_signal, x_val_downshift_signal,\
+    x_train_noshift_background, x_val_noshift_background,\
+    x_train_upshift_background, x_val_upshift_background,\
+    x_train_downshift_background, x_val_downshift_background = train_test_split(
+        x_noshift_signal, x_upshift_signal, x_downshift_signal,\
+        x_noshift_background, x_upshift_background, x_downshift_background,\
+        test_size=0.5, random_state=1234
+    )
     
 
     ####
@@ -290,15 +297,14 @@ def main(loss):
     s = sig * 3
     b = bkg + bkg_up + bkg_down
     #n = 2500
-    bins_for_plots = [0.0, 0.5, 1.0]            # 
     bins_for_plots_middle = []                  # Central Point of Bin 
-    for i in range(0, len(bins_for_plots) - 1):
-        bins_for_plots_middle.append(bins_for_plots[i] + (bins_for_plots[i + 1] - bins_for_plots[i]) / 2)
-    border = bins_for_plots[1]
+    for i in range(0, len(bins) - 1):
+        bins_for_plots_middle.append(bins[i] + (bins[i + 1] - bins[i]) / 2)
+    border = 0.5
 
     plt.figure(figsize=(7, 6))
-    plt.hist(bins_for_plots_middle, weights= [s[0], s[1]], bins= bins_for_plots, histtype="step", label="Signal", lw=2)
-    plt.hist(bins_for_plots_middle, weights= [b[0], b[1]], bins= bins_for_plots, histtype="step", label="Backgorund", lw=2)
+    plt.hist(bins_for_plots_middle, weights= [s[0], s[1]], bins= bins, histtype="step", label="Signal", lw=2)
+    plt.hist(bins_for_plots_middle, weights= [b[0], b[1]], bins= bins, histtype="step", label="Backgorund", lw=2)
     plt.legend(loc= "lower center")
     plt.xlabel("Projection with decision boundary from NN at {}".format(border))
     plt.ylabel("# Events")
