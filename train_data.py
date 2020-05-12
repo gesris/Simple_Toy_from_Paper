@@ -33,13 +33,15 @@ def binfunction(x, right_edge, left_edge):
     return y, grad
 
 
-def main():
+def main(loss):
 
     ####
     #### Loading data and splitting into training and validation with same size
     ####
 
-    x_noshift_signal, x_upshift_signal, x_downshift_signal, x_noshift_background, x_upshift_background, x_downshift_background, y, w = pickle.load(open("train.pickle", "rb"))
+    x_noshift_signal, x_upshift_signal, x_downshift_signal,\
+    x_noshift_background, x_upshift_background, x_downshift_background,\
+    y, w = pickle.load(open("train.pickle", "rb"))
     
     x_train_noshift_signal, x_val_noshift_signal, x_train_upshift_signal, x_val_upshift_signal, x_train_downshift_signal, x_val_downshift_signal,\
     x_train_noshift_background, x_val_noshift_background, x_train_upshift_background, x_val_upshift_background, x_train_downshift_background, x_val_downshift_background = train_test_split(
@@ -59,16 +61,12 @@ def main():
 
     # Training data
     x_signal_noshift = tf.Variable(x_train_noshift_signal, tf.float32, shape=[batch_len, 2])
-    x_signal_upshift = tf.Variable(x_train_upshift_signal, tf.float32, shape=[batch_len, 2])
-    x_signal_downshift = tf.Variable(x_train_downshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
 
     # Validation data
     x_signal_noshift_val = tf.Variable(x_val_noshift_signal, tf.float32, shape=[batch_len, 2])
-    x_signal_upshift_val = tf.Variable(x_val_upshift_signal, tf.float32, shape=[batch_len, 2])
-    x_signal_downshift_val = tf.Variable(x_val_downshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift_val = tf.Variable(x_val_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
@@ -110,157 +108,160 @@ def main():
         return tf.squeeze(tf.stack(counts))
 
 
-    def loss_nll(parameters):
+    ## Negative Log Likelihood loss with nuisance
+    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
         nll0 = null
-
-        mu_nll = parameters[0]
-        theta_nll = parameters[1]
-
-        ## NN functions for each origin
-        f_signal_noshift = tf.squeeze(model(x_signal_noshift))
-        f_background_noshift = tf.squeeze(model(x_background_noshift))
-        f_background_upshift = tf.squeeze(model(x_background_upshift))
-        f_background_downshift = tf.squeeze(model(x_background_downshift))
+        # parameters = [mu, theta]
 
         ## Histograms of events separated by decision boundary
-        sig = hist(f_signal_noshift, bins)
-        bkg = hist(f_background_noshift, bins)
-        bkg_up = hist(f_background_upshift, bins)
-        bkg_down = hist(f_background_downshift, bins)
+        sig = hist(tf.squeeze(model(x_sig)), bins)
+        bkg = hist(tf.squeeze(model(x_bkg)), bins)
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins)
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins)
 
-        print("\nSIGNAL:          {:4.2f},     {:4.2f}".format(sig[0].numpy(), sig[1].numpy()))
-        print("BACKGROUND:      {:4.2f},     {:4.2f}".format(bkg[0].numpy(), bkg[1].numpy()))
-        print("BACKGROUND UP:   {:4.2f},     {:4.2f}".format(bkg_up[0].numpy(), bkg_up[1].numpy()))
-        print("BACKGROUND DOWN: {:4.2f},     {:4.2f}\n".format(bkg_down[0].numpy(), bkg_down[1].numpy()))
-
-        ## Calculate NLL with nuisance
-        for i in range(0, 2):
-            exp = mu_nll * sig[i] + bkg[i]
-            sys = tf.maximum(theta_nll, null) * (bkg_up[i] - bkg[i]) \
-            + tf.minimum(theta_nll, null) * (bkg[i] - bkg_down[i])
+        ## Calculate NLL with or without nuisance
+        for i in range(0, len(sig)):
+            if(nuisance == True):
+                sys = tf.maximum(parameters[1], null) * (bkg_up[i] - bkg[i]) \
+                + tf.minimum(parameters[1], null) * (bkg[i] - bkg_down[i])
+            else:
+                sys = tf.constant(0.0, dtype=tf.float32)
+            exp = parameters[0] * sig[i] + bkg[i]
             obs = sig[i] + bkg[i]
 
             nll0 -= tfp.distributions.Poisson(tf.maximum(exp + sys, epsilon)).log_prob(tf.maximum(obs, epsilon))
-        nll0 -= tfp.distributions.Normal(loc=0, scale=1).log_prob(theta_nll)
-        loss_value = nll0
-        return loss_value
-
-    
-    def loss_nll_no_nuisance(parameters):
-        nll0 = null
-
-        mu_nll_no_nuisance = parameters[0]
-        theta_nll_no_nuisance = parameters[1]
-
-        ## NN functions for each origin
-        f_signal_noshift = tf.squeeze(model(x_signal_noshift))
-        f_background_noshift = tf.squeeze(model(x_background_noshift))
-
-        ## Histograms of events separated by decision boundary
-        sig = hist(f_signal_noshift, bins)
-        bkg = hist(f_background_noshift, bins)
-
-        print("\nSIGNAL:          {:4.2f},     {:4.2f}".format(sig[0].numpy(), sig[1].numpy()))
-        print("BACKGROUND:      {:4.2f},     {:4.2f}".format(bkg[0].numpy(), bkg[1].numpy()))
-
-        ## Calculate NLL with nuisance
-        for i in range(0, 2):
-            exp = mu_nll_no_nuisance * sig[i] + bkg[i]
-            obs = sig[i] + bkg[i]
-
-            nll0 -= tfp.distributions.Poisson(tf.maximum(exp, epsilon)).log_prob(tf.maximum(obs, epsilon))
-        loss_value_no_nuisance = nll0
-        return loss_value_no_nuisance
+        
+        if(nuisance == True):
+            ## Normalized Gaussian constraining the nuisance
+            nll0 -= tfp.distributions.Normal(loc=0, scale=1).log_prob(parameters[1])
+        return nll0
 
 
-    def grad_sd(parameters):
-        mu_sd = parameters[0]
-        theta_sd = parameters[1]
-        with tf.GradientTape() as backprop:
-            with tf.GradientTape(persistent=True) as second_order:
-                with tf.GradientTape() as first_order:
-                    loss_value_nll = loss_nll([mu_sd, theta_sd])
-                    print("NLL:\n", loss_value_nll.numpy())
-
-                    gradnll = first_order.gradient(loss_value_nll, [mu_sd, theta_sd])
-                    print("GRAD NLL:\n dMU: {},     dTHETA: {}".format(gradnll[0].numpy(), gradnll[1].numpy()))
-
-                    hessian_rows = [second_order.gradient(g, [mu_sd, theta_sd]) for g in tf.unstack(gradnll)]
-                    #print("HESSIAN ROWS:\n", hessian_rows)
-                    
-                    hessian_matrix = tf.stack(hessian_rows, axis=1)
-                    #print("HESSE MATRIX:\n", hesse.numpy())
-
+    ## Standard Deviation loss with and without nuisance
+    def loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
+        with tf.GradientTape(persistent=True) as second_order:
+            with tf.GradientTape() as first_order:
+                if(nuisance == True):
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
+                    gradnll = first_order.gradient(loss_value_nll, parameters)
+                    hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
+                    hessian_matrix = tf.stack(hessian_rows, axis=-1)
                     variance = tf.linalg.inv(hessian_matrix)
-                    #print("VARIANZ:\n", variance.numpy())
-
                     poi = variance[0][0]
                     standard_deviation = tf.math.sqrt(poi)
-                    backpropagation = backprop.gradient(loss_value_nll, model.trainable_variables)
-        return standard_deviation, backpropagation
-
-
-    def grad_sd_no_nuisance(parameters):
-        mu_sd_no_nuisance = parameters[0]
-        theta_sd_no_nuisance = parameters[1]
-        with tf.GradientTape() as backprop:
-            with tf.GradientTape(persistent=True) as second_order:
-                with tf.GradientTape() as first_order:
-                    loss_value_nll = loss_nll_no_nuisance([mu_sd_no_nuisance, theta_sd_no_nuisance])
-                    print("NLL:\n", loss_value_nll.numpy())
-
+                else:
+                    mu_sd_no_nuisance = parameters[0]
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
                     gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
-                    print("GRAD NLL:\n dMU: {}".format(gradnll.numpy()))
-
                     gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
                     covariance = 1 / gradgradnll
-
                     standard_deviation = tf.math.sqrt(covariance)
-                    backpropagation = backprop.gradient(standard_deviation, model.trainable_variables)
-        return standard_deviation, backpropagation
+        return standard_deviation
+
+
+    def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
+        with tf.GradientTape() as backprop:
+            loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
+            backpropagation = backprop.gradient(loss_value, model.trainable_variables)
+        return backpropagation
+
+
+    ## Cross Entropy Loss
+    def loss_ce(model, x_sig, x_bkg):
+        f_sig = model(x_sig)
+        f_bkg = model(x_bkg)
+        ce_loss = -tf.math.reduce_mean(
+            tf.math.log(tf.maximum(f_sig, 1e-9)) + tf.math.log(tf.maximum((1 - f_bkg), 1e-9))
+        )
+        return ce_loss
+
+
+    def grad_ce(model, x_sig, x_bkg):
+        with tf.GradientTape() as backprop:
+            loss_value = loss_ce(model, x_sig, x_bkg)
+            backpropagation = backprop.gradient(loss_value, model.trainable_variables)
+        return backpropagation
+
+    
+    ####
+    #### Choose optimizer for training
+    ####
+
+    optimizer = tf.keras.optimizers.Adam()
+
+    
+    ####
+    #### Pretraining decisions
+    ####
+    
+    warmup = True
+    nuisance = True
+
+    if(loss == "Cross Entropy Loss"):
+        warmup = False
+    elif(loss == "Standard Deviation Loss"):
+        warmup = False
+        nuisance = False
+    else:
+        pass
     
 
-    def grad_nll(parameters):
-        mu_grad_nll = parameters[0]
-        theta_grad_nll = parameters[1]
-        with tf.GradientTape() as grad:
-            loss_value = loss_nll([mu_grad_nll, theta_grad_nll])
-            gradnll = grad.gradient(loss_value, model.trainable_variables)
-        return loss_value, gradnll
+    ####
+    #### WARMUP 
+    ####
 
-    ## choose optimizer for training
-    optimizer = tf.keras.optimizers.Adam()
+    if(warmup == True):
+        print("\nStarting Warmup.\n")
+        for warmup_step in range(0, 50):
+            grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        print("\nFinished Warmup.\n")
+
+
+    ## Summery of possible losses
+    def model_loss_and_grads(loss):
+        if(loss == "Cross Entropy Loss"):
+            model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift)
+            model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val)
+            model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift)
+
+        elif(loss == "Standard Deviation Loss"):
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+
+        elif(loss == "Standard Deviation Loss with nuisance"):
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+
+        return model_loss, model_loss_val, model_grads
 
 
     ####
     #### Training loop
     ####
 
+    ## prerequisites for training
     steps = []
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 10
+    max_patience = 30
     patience = max_patience
-    
-    ### initial training step:
-    #initial_loss, grads = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-    initial_loss, grads = grad_sd([mu, theta])
-    min_loss = initial_loss
-    print(initial_loss.numpy())
 
-    for epoch in range(1, 100):
+    ## initial loss:
+    min_loss, _, _ = model_loss_and_grads(loss)
+
+    ## Training loop
+    for epoch in range(1, 1000):
+        current_loss, current_loss_val, grads = model_loss_and_grads(loss)
+
+        ## apply grads and vars
+        optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
+
+        ## monitor loss
         steps.append(epoch)
-
-        ## apply gradient step
-        optimizer.apply_gradients(zip(grads, model.trainable_variables))    # apply grads and vars
-        
-        ## save current loss of training and validation
-        #current_loss, _ = grad_nll(model, x_signal_noshift, x_signal_upshift, x_signal_downshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta])
-        current_loss, _ = grad_sd([mu, theta])
         loss_train_list.append(current_loss)
-
-        #current_loss_val, _ = grad_nll(model, x_signal_noshift_val, x_signal_upshift_val, x_signal_downshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta])
-        current_loss_val, _ = grad_sd([mu, theta])
         loss_validation_list.append(current_loss_val)
 
         if current_loss_val >= min_loss:
@@ -276,44 +277,33 @@ def main():
             print("Trigger early stopping in epoch {}.".format(epoch))
             break
 
-
+    
     ####
     #### Plot histogram displaying significance
     ####
 
-    f_signal_noshift = tf.squeeze(model(x_signal_noshift))
-    f_background_noshift = tf.squeeze(model(x_background_noshift))
-    f_background_upshift = tf.squeeze(model(x_background_upshift))
-    f_background_downshift = tf.squeeze(model(x_background_downshift))
+    sig = hist(tf.squeeze(model(x_signal_noshift)), bins)
+    bkg = hist(tf.squeeze(model(x_background_noshift)), bins)
+    bkg_up = hist(tf.squeeze(model(x_background_upshift)), bins)
+    bkg_down = hist(tf.squeeze(model(x_background_downshift)), bins)
 
-    #sig = hist((one - f_signal_noshift), bins)
-    sig = hist(f_signal_noshift, bins)
-    bkg = hist(f_background_noshift, bins)
-    bkg_up = hist(f_background_upshift, bins)
-    bkg_down = hist(f_background_downshift, bins)
-
-
-    s = sig
-    b = bkg
-    n = 2500
+    s = sig * 3
+    b = bkg + bkg_up + bkg_down
+    #n = 2500
     bins_for_plots = [0.0, 0.5, 1.0]            # 
     bins_for_plots_middle = []                  # Central Point of Bin 
     for i in range(0, len(bins_for_plots) - 1):
         bins_for_plots_middle.append(bins_for_plots[i] + (bins_for_plots[i + 1] - bins_for_plots[i]) / 2)
     border = bins_for_plots[1]
 
-    opt_sig_significance = s[1] / np.sqrt(s[1] + b[1])
-    opt_bkg_significance = b[0] / np.sqrt(s[0] + b[0])
-
     plt.figure(figsize=(7, 6))
     plt.hist(bins_for_plots_middle, weights= [s[0], s[1]], bins= bins_for_plots, histtype="step", label="Signal", lw=2)
     plt.hist(bins_for_plots_middle, weights= [b[0], b[1]], bins= bins_for_plots, histtype="step", label="Backgorund", lw=2)
     plt.legend(loc= "lower center")
-    plt.title("Background Significance: {:.2f},   Signal Significance: {:.2f}".format(opt_bkg_significance, opt_sig_significance))
     plt.xlabel("Projection with decision boundary from NN at {}".format(border))
     plt.ylabel("# Events")
-    plt.axvline(x = border, ymin= 0, ymax= max(n, n), color="r", linestyle= "dashed", lw=2)
-    #plt.show()
+    #plt.axvline(x = border, ymin= 0, ymax= max(n, n), color="r", linestyle= "dashed", lw=2)
+
 
     ####
     #### Plot loss wrt gradient step
@@ -324,6 +314,7 @@ def main():
     plt.plot(steps, loss_validation_list)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
+
 
     ####
     #### Plot NN function
@@ -363,4 +354,5 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    loss_possibilities = ["Cross Entropy Loss", "Standard Deviation Loss", "Standard Deviation Loss with nuisance"]
+    main(loss_possibilities[2])

@@ -32,7 +32,6 @@ def make_dataset(num_events, shift):
 
 # Create training dataset
 num_train = 10000
-total_shift = 1.0
 signal_exp = 1000
 background_exp = 1000
 shift = np.array([0.0, 1.0])
