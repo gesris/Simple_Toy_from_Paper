@@ -36,11 +36,20 @@ def make_dataset(num_events, shift):
 num_train = 10000
 signal_exp = 1000
 background_exp = 1000
-shift = np.array([0.0, 1.0])
 signal_scale = signal_exp / float(num_train)
 background_scale = background_exp / float(num_train)
-plot_label = "CE_1"
+
+
+#################### Change here for different Plots #############################
+
+## shift_scale to showcase the influence of nuisance on decision boundary
+shift_scale = 1.0
+shift = shift_scale * np.array([0.0, 1.0])
+
 # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
+## plot label decides, which loss method is chosen
+plot_label = "CE_shift_scale_1"
+##################################################################################
 
 
 # dataset with events containing each x-/y-coordinates
