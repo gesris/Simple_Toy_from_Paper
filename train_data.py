@@ -7,6 +7,8 @@ import pickle
 import matplotlib
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+
 
 
 # custom gradient allows better numerical precision for functions with diverging or not defined derivative
@@ -116,7 +118,7 @@ def main(loss):
 
 
     ## Negative Log Likelihood loss with nuisance
-    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
+    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
         nll0 = null
         # parameters = [mu, theta]
 
@@ -128,7 +130,7 @@ def main(loss):
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
-            if(nuisance == True):
+            if(nuisance_is_true):
                 sys = tf.maximum(parameters[1], null) * (bkg_up[i] - bkg[i]) \
                 + tf.minimum(parameters[1], null) * (bkg[i] - bkg_down[i])
             else:
@@ -138,18 +140,18 @@ def main(loss):
 
             nll0 -= tfp.distributions.Poisson(tf.maximum(exp + sys, epsilon)).log_prob(tf.maximum(obs, epsilon))
         
-        if(nuisance == True):
+        if(nuisance_is_true):
             ## Normalized Gaussian constraining the nuisance
             nll0 -= tfp.distributions.Normal(loc=0, scale=1).log_prob(parameters[1])
         return nll0
 
 
     ## Standard Deviation loss with and without nuisance
-    def loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
+    def loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
         with tf.GradientTape(persistent=True) as second_order:
             with tf.GradientTape() as first_order:
-                if(nuisance == True):
-                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
+                if(nuisance_is_true):
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
                     gradnll = first_order.gradient(loss_value_nll, parameters)
                     hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
                     hessian_matrix = tf.stack(hessian_rows, axis=-1)
@@ -158,7 +160,7 @@ def main(loss):
                     standard_deviation = tf.math.sqrt(poi)
                 else:
                     mu_sd_no_nuisance = parameters[0]
-                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
                     gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
                     gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
                     covariance = 1 / gradgradnll
@@ -166,9 +168,9 @@ def main(loss):
         return standard_deviation
 
 
-    def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance):
+    def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
         with tf.GradientTape() as backprop:
-            loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance)
+            loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
@@ -201,28 +203,16 @@ def main(loss):
     #### Pretraining decisions
     ####
     
-    warmup = True
-    nuisance = True
+    warmup_is_true = True
+    nuisance_is_true = True
 
     if(loss == "Cross Entropy Loss"):
-        warmup = False
+        warmup_is_true = False
     elif(loss == "Standard Deviation Loss"):
-        warmup = False
-        nuisance = False
+        warmup_is_true = False
+        nuisance_is_true = False
     else:
         pass
-    
-
-    ####
-    #### WARMUP 
-    ####
-
-    if(warmup == True):
-        print("\nStarting Warmup.\n")
-        for warmup_step in range(0, 50):
-            grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
-            optimizer.apply_gradients(zip(grads, model.trainable_variables))
-        print("\nFinished Warmup.\n")
 
 
     ## Summery of possible losses
@@ -233,17 +223,33 @@ def main(loss):
             model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
 
         return model_loss, model_loss_val, model_grads
 
+    print("\nMethod: {}\n".format(loss))
+
+    ####
+    #### WARMUP 
+    ####
+    
+    if(warmup_is_true):
+        print("\n\
+    ######################\n\
+    # Warmup Initialized #\n\
+    ######################\n")
+        for warmup_step in tqdm(range(0, 50)):
+            ## Warmup trains model without nuisance to increase stability
+            grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], False)    # nuisance has to be FALSE here
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    
 
     ####
     #### Training loop
@@ -296,7 +302,7 @@ def main(loss):
 
     s = sig * 3
     b = bkg + bkg_up + bkg_down
-    #n = 2500
+    n = 2500
     bins_for_plots_middle = []                  # Central Point of Bin 
     for i in range(0, len(bins) - 1):
         bins_for_plots_middle.append(bins[i] + (bins[i + 1] - bins[i]) / 2)
@@ -308,7 +314,7 @@ def main(loss):
     plt.legend(loc= "lower center")
     plt.xlabel("Projection with decision boundary from NN at {}".format(border))
     plt.ylabel("# Events")
-    #plt.axvline(x = border, ymin= 0, ymax= max(n, n), color="r", linestyle= "dashed", lw=2)
+    plt.axvline(x=border, ymin=0, ymax=n, color="r", linestyle= "dashed", lw=2)
 
 
     ####
