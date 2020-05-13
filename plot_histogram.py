@@ -19,7 +19,7 @@ s, b, b_up, b_down, bins = pickle.load(open("plot_histogram.pickle", "rb"))
 plot_label = pickle.load(open("plot_label.pickle", "rb"))
 
 ## Scale data
-if(plot_label == "_SD_with_nuisance"):
+if("SD_with" in plot_label):
     s = 3 * s
     b = b + b_up + b_down
 
