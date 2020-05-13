@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 
 
+
 # custom gradient allows better numerical precision for functions with diverging or not defined derivative
 @tf.custom_gradient
 # binfunction selects all outputs from NN and distributes the accompanying events into the certain bin
@@ -82,7 +83,7 @@ def main(loss):
 
     
     ####
-    #### Define loss
+    #### Define losses
     ####
     
     bins = np.linspace(0.0, 1.0, 3)
@@ -104,7 +105,7 @@ def main(loss):
 
 
     ####
-    #### First define Loss, than define gradient, than minimize via grad(loss, model.variables)
+    #### First define Loss, then define gradient, then minimize via grad(loss, model.variables)
     ####
 
     def hist(x, bins):
@@ -292,29 +293,17 @@ def main(loss):
 
     
     ####
-    #### Plot histogram displaying significance
+    #### Save Model and histogram
     ####
 
-    sig = hist(tf.squeeze(model(x_signal_noshift)), bins)
-    bkg = hist(tf.squeeze(model(x_background_noshift)), bins)
-    bkg_up = hist(tf.squeeze(model(x_background_upshift)), bins)
-    bkg_down = hist(tf.squeeze(model(x_background_downshift)), bins)
+    model.save('./mymodel')
 
-    s = sig * 3
-    b = bkg + bkg_up + bkg_down
-    n = 2500
-    bins_for_plots_middle = []                  # Central Point of Bin 
-    for i in range(0, len(bins) - 1):
-        bins_for_plots_middle.append(bins[i] + (bins[i + 1] - bins[i]) / 2)
-    border = 0.5
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins)
+    b = hist(tf.squeeze(model(x_background_noshift)), bins)
+    b_up = hist(tf.squeeze(model(x_background_upshift)), bins)
+    b_down = hist(tf.squeeze(model(x_background_downshift)), bins)
 
-    plt.figure(figsize=(7, 6))
-    plt.hist(bins_for_plots_middle, weights= [s[0], s[1]], bins= bins, histtype="step", label="Signal", lw=2)
-    plt.hist(bins_for_plots_middle, weights= [b[0], b[1]], bins= bins, histtype="step", label="Backgorund", lw=2)
-    plt.legend(loc= "lower center")
-    plt.xlabel("Projection with decision boundary from NN at {}".format(border))
-    plt.ylabel("# Events")
-    plt.axvline(x=border, ymin=0, ymax=n, color="r", linestyle= "dashed", lw=2)
+    pickle.dump([s, b, b_up, b_down, bins], open("plot_histogram.pickle", "wb"))
 
 
     ####
@@ -326,45 +315,18 @@ def main(loss):
     plt.plot(steps, loss_validation_list)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-
-
-    ####
-    #### Plot NN function
-    #### 
-
-    length = 1000
-    sensibility = 0.005
-    b = np.linspace(-3, 3, length)
-    xx, yy = np.meshgrid(b, b, sparse=False)
-    x = np.vstack([xx.reshape((length * length)), yy.reshape((length * length))]).T
-    c = tf.squeeze(model(x)).numpy()
-    c = c.reshape((length, length))
-    
-    # visualize decision boundary
-    boundary = tf.squeeze(model(x)).numpy()
-    boundary = boundary.reshape((length, length))
-    # iterate through c to highlight decision boundary
-    for y in range(0, length):
-        for x in range(0, length):
-            if c[y][x] > 0.5-sensibility and c[y][x] < 0.5+sensibility:
-                boundary[y][x] = 1
-            else:
-                boundary[y][x] = 0
-
-    limit = [-3, 3]
-    plt.figure(figsize=(7, 6))
-    cbar = plt.contourf(xx, yy, c + boundary, levels=np.linspace(c.min(), c.max(), 21))
-    plt.colorbar(cbar)
-    plt.xlabel("x1")
-    plt.ylabel("x2")
-    plt.title("Neural network function")
-    plt.tight_layout()
-    plt.xlim(limit[0], limit[1])
-    plt.ylim(limit[0], limit[1])
-    #plt.savefig("/home/risto/Masterarbeit/Python/significance_plots/NN_function_{}.png".format(picture_index), bbox_inches = "tight")
-    plt.show()
+    plt.savefig("./plots/loss_opt_steps{}".format(plot_label), bbox_inches = "tight")
     
 
 if __name__ == "__main__":
-    loss_possibilities = ["Cross Entropy Loss", "Standard Deviation Loss", "Standard Deviation Loss with nuisance"]
-    main(loss_possibilities[2])
+    ## load plot_label to choose loss method according to label
+    plot_label = pickle.load(open("plot_label.pickle", "rb"))
+
+    if("CE" in plot_label):
+        loss_choice = "Cross Entropy Loss"
+    elif("SD_no" in plot_label):
+        loss_choice = "Standard Deviation Loss"
+    elif("SD_with" in plot_label):
+        loss_choice = "Standard Deviation Loss with nuisance"
+    
+    main(loss_choice)
