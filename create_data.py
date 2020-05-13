@@ -29,14 +29,18 @@ def make_dataset(num_events, shift):
     y = np.hstack([np.ones(num_events), np.zeros(num_events)])
     return x1, x2, y
 
+####
+#### Create training dataset - important parameters for plots!
+####
 
-# Create training dataset
 num_train = 10000
 signal_exp = 1000
 background_exp = 1000
 shift = np.array([0.0, 1.0])
 signal_scale = signal_exp / float(num_train)
 background_scale = background_exp / float(num_train)
+plot_label = "CE_1"
+# labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
 
 
 # dataset with events containing each x-/y-coordinates
@@ -78,11 +82,11 @@ def makeplot(histograms):
     plt.xlim(limit[0], limit[1])
     plt.ylim(limit[0], limit[1])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
-    #plt.savefig("/home/risto/Masterarbeit/test.png", bbox_inches = "tight")
-    plt.show()
+    plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
 
 makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
 
 # save training data into pickle
 pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
+pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
