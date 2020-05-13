@@ -33,7 +33,7 @@ def make_dataset(num_events, shift):
 #### Create training dataset - important parameters for plots!
 ####
 
-num_train = 10000
+num_train = 100000
 signal_exp = 1000
 background_exp = 1000
 signal_scale = signal_exp / float(num_train)
@@ -48,7 +48,7 @@ shift = shift_scale * np.array([0.0, 1.0])
 
 # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
 ## plot label decides, which loss method is chosen
-plot_label = "SD_with_nuisance_scale_1"
+plot_label = "CE"
 ##################################################################################
 
 print("\nCreating data with shift: {}, shift scale: {}".format(shift, shift_scale))
@@ -93,6 +93,7 @@ def makeplot(histograms):
     plt.ylim(limit[0], limit[1])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
     plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
+
 
 makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
 

@@ -315,7 +315,7 @@ def main(loss):
     plt.plot(steps, loss_validation_list)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.savefig("./plots/loss_opt_steps{}".format(plot_label), bbox_inches = "tight")
+    plt.savefig("./plots/loss_opt_steps_{}".format(plot_label), bbox_inches = "tight")
     
 
 if __name__ == "__main__":

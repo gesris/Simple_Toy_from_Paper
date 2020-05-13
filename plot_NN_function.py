@@ -46,3 +46,4 @@ plt.tight_layout()
 plt.xlim(limit[0], limit[1])
 plt.ylim(limit[0], limit[1])
 plt.savefig("./plots/NN_function_{}.png".format(plot_label), bbox_inches = "tight")
+
