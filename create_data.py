@@ -43,14 +43,15 @@ background_scale = background_exp / float(num_train)
 #################### Change here for different Plots #############################
 
 ## shift_scale to showcase the influence of nuisance on decision boundary
-shift_scale = 1.0
+shift_scale = 1.0   #0.75, 0.5, 0.25
 shift = shift_scale * np.array([0.0, 1.0])
 
 # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
 ## plot label decides, which loss method is chosen
-plot_label = "CE_shift_scale_1"
+plot_label = "SD_with_nuisance_scale_1"
 ##################################################################################
 
+print("\nCreating data with shift: {}, shift scale: {}".format(shift, shift_scale))
 
 # dataset with events containing each x-/y-coordinates
 x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
