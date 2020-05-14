@@ -3,8 +3,8 @@
 source setup_cmssw.sh
 
 # Convert shapes and write datacard
-python3 write_shapes.py
-python3 write_datacard.py
+python write_shapes.py
+python write_datacard.py
 #python toy7/check_shapes.py
 
 # Perform scan
@@ -25,7 +25,7 @@ combineTool.py -M MultiDimFit -d datacard_nosys.txt -m 120 \
 
 # Plot 2*deltaNLL vs POI
 # NOTE: We reuse code from the Higgs example here!
-python3 convert_scans.py
+python convert_scans.py
 bash plot_nll.sh
 
 # Signal strength
@@ -40,7 +40,7 @@ exit
 combineTool.py -M T2W -m 120 -o workspace.root -i datacard.txt
 #PostFitShapesFromWorkspace -m 120 -w workspace.root -d datacard.txt -o prefit.root
 PostFitShapesFromWorkspace -m 120 -w workspace.root -d datacard.txt -f fitDiagnostics.root:fit_s -o postfit.root --postfit --freeze r
-python3 plot_prefit_postfit.py
+python plot_prefit_postfit.py
 
 # Impacts
 combineTool.py -M Impacts -m 120 -d workspace.root --doInitialFit --robustFit 1
