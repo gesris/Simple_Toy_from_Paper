@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source setup_cmssw.sh
+source ./setup_cmssw.sh
 
 # Convert shapes and write datacard
 python write_shapes.py
