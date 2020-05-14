@@ -34,10 +34,10 @@ def make_dataset(num_events, shift):
 ####
 
 num_train = 100000
-signal_exp = 1000
+signal_exp = 50
 background_exp = 1000
-signal_scale = signal_exp / float(num_train)
-background_scale = background_exp / float(num_train)
+signal_scale = signal_exp / float(num_train / 4.)
+background_scale = background_exp / float(num_train / 4.)
 
 
 #################### Change here for different Plots #############################

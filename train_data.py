@@ -298,10 +298,10 @@ def main(loss):
 
     model.save('./mymodel')
 
-    s = hist(tf.squeeze(model(x_signal_noshift)), bins)
-    b = hist(tf.squeeze(model(x_background_noshift)), bins)
-    b_up = hist(tf.squeeze(model(x_background_upshift)), bins)
-    b_down = hist(tf.squeeze(model(x_background_downshift)), bins)
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (50. / 25000.)
+    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
+    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
+    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
 
     pickle.dump([s, b, b_up, b_down, bins], open("plot_histogram.pickle", "wb"))
 
