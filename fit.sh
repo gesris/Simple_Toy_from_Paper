@@ -25,8 +25,8 @@ combineTool.py -M MultiDimFit -d datacard_nosys.txt -m 120 \
 
 # Plot 2*deltaNLL vs POI
 # NOTE: We reuse code from the Higgs example here!
-python higgs3/convert_scans.py
-bash higgs3/plot_nll.sh
+python3 convert_scans.py
+bash plot_nll.sh
 
 # Signal strength
 combine -M MultiDimFit -d datacard.txt --algo singles --robustFit 1
@@ -40,7 +40,7 @@ exit
 combineTool.py -M T2W -m 120 -o workspace.root -i datacard.txt
 #PostFitShapesFromWorkspace -m 120 -w workspace.root -d datacard.txt -o prefit.root
 PostFitShapesFromWorkspace -m 120 -w workspace.root -d datacard.txt -f fitDiagnostics.root:fit_s -o postfit.root --postfit --freeze r
-python toy7/plot_prefit_postfit.py
+python3 plot_prefit_postfit.py
 
 # Impacts
 combineTool.py -M Impacts -m 120 -d workspace.root --doInitialFit --robustFit 1
