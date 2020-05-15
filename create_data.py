@@ -29,75 +29,85 @@ def make_dataset(num_events, shift):
     y = np.hstack([np.ones(num_events), np.zeros(num_events)])
     return x1, x2, y
 
-####
-#### Create training dataset - important parameters for plots!
-####
+def main(shift_scale, shift, plot_label):
+        
 
-num_train = 100000
-signal_exp = 50
-background_exp = 1000
-signal_scale = signal_exp / float(num_train / 4.)
-background_scale = background_exp / float(num_train / 4.)
+    ####
+    #### Create training dataset - important parameters for plots!
+    ####
 
-
-#################### Change here for different Plots #############################
-
-## shift_scale to showcase the influence of nuisance on decision boundary
-shift_scale = 1   #0.75, 0.5, 0.25
-shift = shift_scale * np.array([0.0, 1.0])
-
-# labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-## plot label decides, which loss method is chosen
-plot_label = "CE"
-##################################################################################
-
-print("\nCreating data with shift: {}, shift scale: {}".format(shift, shift_scale))
-
-# dataset with events containing each x-/y-coordinates
-x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
-x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
-x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
+    num_train = 100000
+    signal_exp = 50
+    background_exp = 1000
+    signal_scale = signal_exp / float(num_train / 4.)
+    background_scale = background_exp / float(num_train / 4.)
 
 
-# weight for normalization
-w_train = np.ones(y_train.shape)
-w_train[y_train == 1] = signal_scale
-w_train[y_train == 0] = background_scale
+    #################### Change here for different Plots #############################
 
-# summerize events with 2D histogram
-number_of_bins = 20
-scale = 4
-bins = np.linspace(-scale, scale, number_of_bins)
+    ## shift_scale to showcase the influence of nuisance on decision boundary
+    #shift_scale = 1   #0.75, 0.5, 0.25
+    #shift = shift_scale * np.array([0.0, 1.0])
 
-hist_x_train_signal = np.histogram2d(x_train_noshift_signal[:, 1], x_train_noshift_signal[:, 0], bins= [bins,bins])
-hist_x_train_noshift_background = np.histogram2d(x_train_noshift_background[:, 1], x_train_noshift_background[:, 0], bins= [bins,bins])
-hist_x_train_upshift_background = np.histogram2d(x_train_upshift_background[:, 1], x_train_upshift_background[:, 0], bins= [bins,bins])
-hist_x_train_downshift_background = np.histogram2d(x_train_downshift_background[:, 1], x_train_downshift_background[:, 0], bins= [bins,bins])
+    # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
+    ## plot label decides, which loss method is chosen
+    #plot_label = "CE"
+    ##################################################################################
 
+    print("\nCreating data with shift: {}, shift scale: {}, plot label: {}".format(shift, shift_scale, plot_label))
 
-def makeplot(histograms):
-    limit = [-4, 4]
-    plt.figure(figsize=(6, 6))
-    cmap_sig = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C0"] * 3)
-    cmap_bkg = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C1"] * 3)
-    cmap = [cmap_sig, cmap_bkg, cmap_bkg, cmap_bkg]
-    color=["C0", "C1", "C1",  "C1"]
-    label=["Signal", "Background", "Background upshift", "Background downshift"]
-    alpha = [0.8, 0.8, 0.4, 0.4]
-    for i in range(0, len(histograms)):
-        plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], alpha=alpha[i])
-        plt.plot([-999], [-999], color=color[i], label=label[i])
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.xlim(limit[0], limit[1])
-    plt.ylim(limit[0], limit[1])
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
-    plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
+    # dataset with events containing each x-/y-coordinates
+    x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
+    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
+    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
 
 
-makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
+    # weight for normalization
+    w_train = np.ones(y_train.shape)
+    w_train[y_train == 1] = signal_scale
+    w_train[y_train == 0] = background_scale
 
-# save training data into pickle
-pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
-pickle.dump(plot_label, open("plot_label.pickle", "wb"))
+    # summerize events with 2D histogram
+    number_of_bins = 20
+    scale = 4
+    bins = np.linspace(-scale, scale, number_of_bins)
 
+    hist_x_train_signal = np.histogram2d(x_train_noshift_signal[:, 1], x_train_noshift_signal[:, 0], bins= [bins,bins])
+    hist_x_train_noshift_background = np.histogram2d(x_train_noshift_background[:, 1], x_train_noshift_background[:, 0], bins= [bins,bins])
+    hist_x_train_upshift_background = np.histogram2d(x_train_upshift_background[:, 1], x_train_upshift_background[:, 0], bins= [bins,bins])
+    hist_x_train_downshift_background = np.histogram2d(x_train_downshift_background[:, 1], x_train_downshift_background[:, 0], bins= [bins,bins])
+
+
+    def makeplot(histograms):
+        limit = [-4, 4]
+        plt.figure(figsize=(6, 6))
+        cmap_sig = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C0"] * 3)
+        cmap_bkg = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C1"] * 3)
+        cmap = [cmap_sig, cmap_bkg, cmap_bkg, cmap_bkg]
+        color=["C0", "C1", "C1",  "C1"]
+        label=["Signal", "Background", "Background upshift", "Background downshift"]
+        alpha = [0.8, 0.8, 0.4, 0.4]
+        for i in range(0, len(histograms)):
+            plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], alpha=alpha[i])
+            plt.plot([-999], [-999], color=color[i], label=label[i])
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.xlim(limit[0], limit[1])
+        plt.ylim(limit[0], limit[1])
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
+        #plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
+        plt.show()
+
+
+    makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
+
+    # save training data into pickle
+    pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
+    pickle.dump(plot_label, open("plot_label.pickle", "wb"))
+
+if __name__ == "__main__":
+    shift_scale = 1.0
+    shift = shift_scale * np.array([0.0, 1.0])
+    # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
+    plot_label = "CE1"
+    main(shift_scale, shift, plot_label)
