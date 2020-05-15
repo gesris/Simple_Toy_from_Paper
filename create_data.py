@@ -43,17 +43,6 @@ def main(shift_scale, shift, plot_label):
     background_scale = background_exp / float(num_train / 4.)
 
 
-    #################### Change here for different Plots #############################
-
-    ## shift_scale to showcase the influence of nuisance on decision boundary
-    shift_scale = 1
-    shift = shift_scale * np.array([1.0, 0.0])
-
-    # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    ## plot label decides, which loss method is chosen
-    plot_label = 'SD_with_nuisance1'
-    ##################################################################################
-
     print("\nCreating data with shift: {}, shift scale: {}, plot label: {}".format(shift, shift_scale, plot_label))
 
     # dataset with events containing each x-/y-coordinates
@@ -95,8 +84,7 @@ def main(shift_scale, shift, plot_label):
         plt.xlim(limit[0], limit[1])
         plt.ylim(limit[0], limit[1])
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
-        #plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
-        plt.show()
+        plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
 
 
     makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
