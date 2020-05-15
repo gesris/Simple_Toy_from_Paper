@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source Simple_Toy_from_paper/venv/bin/activate
+source /home/gristo/Simple_Toy_from_paper/venv/bin/activate
 
 sh make_plots.sh
 
