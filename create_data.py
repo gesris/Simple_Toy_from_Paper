@@ -46,12 +46,12 @@ def main(shift_scale, shift, plot_label):
     #################### Change here for different Plots #############################
 
     ## shift_scale to showcase the influence of nuisance on decision boundary
-    shift_scale = 3.2
-    shift = shift_scale * np.array([4.3, 2.1])
+    shift_scale = 1
+    shift = shift_scale * np.array([1.0, 0.0])
 
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
     ## plot label decides, which loss method is chosen
-    plot_label = 'CE9'
+    plot_label = 'SD_with_nuisance1'
     ##################################################################################
 
     print("\nCreating data with shift: {}, shift scale: {}, plot label: {}".format(shift, shift_scale, plot_label))
@@ -106,8 +106,8 @@ def main(shift_scale, shift, plot_label):
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
-    shift_scale = 3.2
-    shift = shift_scale * np.array([4.3, 2.1])
+    shift_scale = 1
+    shift = shift_scale * np.array([1.0, 0.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = 'CE9'
+    plot_label = 'SD_with_nuisance1'
     main(shift_scale, shift, plot_label)
