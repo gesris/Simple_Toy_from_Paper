@@ -9,7 +9,7 @@ sleep 1s
 
 deactivate
 
-source setup_cmssw.sh
+source /home/gristo/Simple_Toy_from_Paper/setup_cmssw.sh
 
 sh fit.sh
     
