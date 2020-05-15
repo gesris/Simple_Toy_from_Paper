@@ -4,7 +4,7 @@ source /home/gristo/Simple_Toy_from_Paper/venv/bin/activate
 
 sh /home/gristo/Simple_Toy_from_Paper/make_plots.sh
 
-echo "\nInitiating mu-fit.\n"
+echo "Initiating mu-fit."
 sleep 1s
 
 deactivate

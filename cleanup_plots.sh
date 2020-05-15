@@ -1,4 +1,4 @@
 #!/bin/bash
 
 rm ./*.png
-rm ./Plots/*
+rm ./plots/*
