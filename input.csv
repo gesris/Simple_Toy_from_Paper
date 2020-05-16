@@ -15,5 +15,6 @@
 0.0,1.0,0.1,SD_with_nuisance_diff_scale3
 0.0,1.0,0.075,SD_with_nuisance_diff_scale4
 0.0,1.0,0.05,SD_with_nuisance_diff_scale5
-0.0,1.0,0.01,SD_with_nuisance_diff_scale6
+0.0,1.0,0.025,SD_with_nuisance_diff_scale6
+0.0,1.0,0.01,SD_with_nuisance_diff_scale7
 0.0,1.0,1.0,CE_default

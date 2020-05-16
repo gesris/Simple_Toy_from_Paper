@@ -28,6 +28,8 @@ do
 done < $INPUT
 IFS=$OLDIFS
 
+mv ./plots/* ./Plots/
+
 #read -p "Enter Background X-Shift: " XSHIFT
 #read -p "Enter Background Y-Shift: " YSHIFT
 #read -p "Enter Shift Scale: " SHIFTSCALE
