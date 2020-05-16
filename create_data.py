@@ -95,8 +95,8 @@ def main(shift_scale, shift, plot_label):
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
-    shift_scale = 1.0
+    shift_scale = 0.5
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = "SD_with_nuisance_diff_scale1"
+    plot_label = "SD_with_nuisance_diff_scale2"
     main(shift_scale, shift, plot_label)
