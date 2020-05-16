@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+matplotlib.rc("font", size=16, family="serif")
 np.random.seed(1234)
 import pickle
 
@@ -79,8 +80,8 @@ def main(shift_scale, shift, plot_label):
         for i in range(0, len(histograms)):
             plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], alpha=alpha[i])
             plt.plot([-999], [-999], color=color[i], label=label[i])
-        plt.xlabel("x")
-        plt.ylabel("y")
+        plt.xlabel("$x_1$")
+        plt.ylabel("$x_2$")
         plt.xlim(limit[0], limit[1])
         plt.ylim(limit[0], limit[1])
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
@@ -95,7 +96,7 @@ def main(shift_scale, shift, plot_label):
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
-    shift_scale = 0.01
+    shift_scale = 1.0
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
     plot_label = 'SD_with_nuisance_diff_scale6'

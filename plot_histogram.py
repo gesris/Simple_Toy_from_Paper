@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('Agg')
 matplotlib.rc("font", size=16, family="serif")
 
 
@@ -46,5 +47,4 @@ plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", bo
 plt.xlabel("$f$")
 plt.ylabel("Count")
 plt.xlim(bins[0], bins[-1])
-#plt.axvline(x=border, ymin=0, ymax=n, color="r", linestyle= "dashed", lw=2)
 plt.savefig("./plots/histogram_{}.png".format(plot_label), bbox_inches = "tight")

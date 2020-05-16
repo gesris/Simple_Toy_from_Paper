@@ -23,6 +23,8 @@ do
 
     ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && sh cleanup_plots.sh'
 
+    python3 create_data.py
+
 done < $INPUT
 IFS=$OLDIFS
 

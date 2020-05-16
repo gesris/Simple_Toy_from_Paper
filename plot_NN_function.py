@@ -6,6 +6,7 @@ import pickle
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.rc("font", size=16, family="serif")
+matplotlib.use('Agg')
 from tqdm import tqdm
 
 ## Load Data
@@ -47,8 +48,4 @@ plt.xlabel("$x_1$")
 plt.ylabel("$x_2$")
 plt.xlim(limit[0], limit[1])
 plt.ylim(limit[0], limit[1])
-#ticks = [-2, 0, 2, 4]
-#plt.gca().set_xticks(ticks)
-#plt.gca().set_yticks(ticks)
 plt.savefig("./plots/NN_function_{}.png".format(plot_label), bbox_inches = "tight")
-#plt.show()
