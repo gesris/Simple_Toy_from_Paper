@@ -48,8 +48,10 @@ def main(shift_scale, shift, plot_label):
 
     # dataset with events containing each x-/y-coordinates
     x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
-    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
-    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
+    #x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
+    #x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
+    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, [-2.0, 0.0])
+    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, [0.0, -1.0])
 
 
     # weight for normalization
@@ -75,16 +77,22 @@ def main(shift_scale, shift, plot_label):
         cmap_bkg = matplotlib.colors.LinearSegmentedColormap.from_list("", ["C1"] * 3)
         cmap = [cmap_sig, cmap_bkg, cmap_bkg, cmap_bkg]
         color=["C0", "C1", "C1",  "C1"]
-        label=["Signal", "Background", "Background upshift", "Background downshift"]
-        alpha = [0.8, 0.8, 0.4, 0.4]
+        label=["Signal", "Background", "Bkg. upshift", "Bkg. downshift"]
+        ls = ["solid", "solid", "dashed", "dotted"]
+        lw = 2
+        alpha = [0.8, 0.8, 0.6, 0.6]
         for i in range(0, len(histograms)):
-            plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], alpha=alpha[i])
-            plt.plot([-999], [-999], color=color[i], label=label[i])
+            plt.contour(histograms[i][0], extent= [histograms[i][1][0], histograms[i][1][-1], histograms[i][2][0] , histograms[i][2][-1]], cmap=cmap[i], linewidths=2, linestyles=ls[i], alpha=alpha[i])
+            plt.plot([-999], [-999], color=color[i])
+        plt.plot([-999], [-999], lw=lw, color="C0", label="Signal")
+        plt.plot([-999], [-999], lw=lw, color="C1", label="Background")
+        plt.plot([-999], [-999], lw=lw, ls="--", color="C1", alpha=0.8, label="Bkg. (up-shift)")
+        plt.plot([-999], [-999], lw=lw, ls=":", color="C1", alpha=0.8, label="Bkg. (down-shift)")
         plt.xlabel("$x_1$")
         plt.ylabel("$x_2$")
         plt.xlim(limit[0], limit[1])
         plt.ylim(limit[0], limit[1])
-        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=1, mode="expand", borderaxespad=0.)
+        plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0., prop={'size': 14})
         plt.savefig("./plots/sig_bkg_wave{}".format(plot_label), bbox_inches = "tight")
         #plt.show()
 
@@ -96,8 +104,8 @@ def main(shift_scale, shift, plot_label):
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
-    shift_scale = 0.01
+    shift_scale = 1.0
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = "SD_with_nuisance_diff_scale7"
+    plot_label = "SD_with_nuisance8"
     main(shift_scale, shift, plot_label)
