@@ -18,8 +18,10 @@ do
 
     ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && git pull && sh master_plot.sh'
 
-    scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/
-    scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/plot_nll_$PLOTLABEL.png
+    #scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/
+    #scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/plot_nll_$PLOTLABEL.png
+    scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/
+    scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/plot_nll_$PLOTLABEL.png
 
     ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && sh cleanup_plots.sh'
 
@@ -28,7 +30,7 @@ do
 done < $INPUT
 IFS=$OLDIFS
 
-mv ./plots/* ./Plots/
+#mv ./plots/* ./Plots/
 
 #read -p "Enter Background X-Shift: " XSHIFT
 #read -p "Enter Background Y-Shift: " YSHIFT

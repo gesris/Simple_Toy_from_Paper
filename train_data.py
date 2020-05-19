@@ -246,7 +246,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        for warmup_step in tqdm(range(0, 70)):
+        for warmup_step in tqdm(range(0, 30)):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], False)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -260,14 +260,14 @@ def main(loss):
     steps = []
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 30
+    max_patience = 1000
     patience = max_patience
 
     ## initial loss:
     min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
-    for epoch in range(1, 1000):
+    for epoch in range(1, 100000):
         current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
         ## apply grads and vars
