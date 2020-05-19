@@ -48,10 +48,8 @@ def main(shift_scale, shift, plot_label):
 
     # dataset with events containing each x-/y-coordinates
     x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
-    #x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
-    #x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
-    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, [-2.0, 0.0])
-    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, [0.0, -1.0])
+    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
+    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
 
 
     # weight for normalization
