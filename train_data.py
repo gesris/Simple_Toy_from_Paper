@@ -260,7 +260,7 @@ def main(loss):
     steps = []
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 10
+    max_patience = 30
     patience = max_patience
 
     ## initial loss:
