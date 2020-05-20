@@ -30,7 +30,6 @@ n = len(s)
 bins_for_plots_middle = []                  # Central Point of Bin
 for i in range(0, len(bins) - 1):
     bins_for_plots_middle.append(bins[i] + (bins[i + 1] - bins[i]) / 2)
-border = 0.5
 
 print("\nPlotting histogram\n")
 lw = 2
