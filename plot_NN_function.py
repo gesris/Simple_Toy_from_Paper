@@ -12,6 +12,9 @@ from tqdm import tqdm
 ## Load Data
 model = tf.keras.models.load_model('./mymodel')
 plot_label = pickle.load(open("plot_label.pickle", "rb"))
+_, _, _, _, bins = pickle.load(open("plot_histogram.pickle", "rb"))
+bin_edges_temp = bins[:-1]
+bin_edges = bin_edges_temp[1:]
 
 
 # Create meshgrid for 2D plot
@@ -29,12 +32,21 @@ print("\nPlotting NN function\n")
 boundary = tf.squeeze(model(x)).numpy()
 boundary = boundary.reshape((length, length))
 # iterate through c to highlight decision boundary
+for edge in bin_edges:
+    for y in tqdm(range(0, length)):
+        for x in range(0, length):
+            if c[y][x] > edge-sensibility and c[y][x] < edge + sensibility:
+                boundary[y][x] = 1
+            else:
+                #boundary[y][x] = 0
+                pass
+
+# cleanup of boundary
 for y in tqdm(range(0, length)):
     for x in range(0, length):
-        if c[y][x] > 0.5-sensibility and c[y][x] < 0.5 + sensibility:
-            boundary[y][x] = 1
-        else:
+        if(boundary[y][x] != 1):
             boundary[y][x] = 0
+            
 
 
 # Plot NN function
