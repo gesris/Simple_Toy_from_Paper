@@ -123,10 +123,10 @@ def main(loss):
 
         # parameters = [mu, theta]
         ## Histograms of events separated by decision boundary
-        sig = hist(tf.squeeze(model(x_sig)) * (50. / 25000.), bins)
-        bkg = hist(tf.squeeze(model(x_bkg)) * (1000. / 25000.), bins)
-        bkg_up = hist(tf.squeeze(model(x_bkg_up)) * (1000. / 25000.), bins)
-        bkg_down = hist(tf.squeeze(model(x_bkg_down)) * (1000. / 25000.), bins)
+        sig = hist(tf.squeeze(model(x_sig)), bins) * (50. / 25000.)
+        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
@@ -297,10 +297,10 @@ def main(loss):
 
     model.save('./mymodel')
 
-    s = hist(tf.squeeze(model(x_signal_noshift)) * (50. / 25000.), bins)
-    b = hist(tf.squeeze(model(x_background_noshift)) * (1000. / 25000.), bins)
-    b_up = hist(tf.squeeze(model(x_background_upshift)) * (1000. / 25000.), bins)
-    b_down = hist(tf.squeeze(model(x_background_downshift)) * (1000. / 25000.), bins)
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (50. / 25000.)
+    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
+    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
+    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
 
     pickle.dump([s, b, b_up, b_down, bins], open("plot_histogram.pickle", "wb"))
 
