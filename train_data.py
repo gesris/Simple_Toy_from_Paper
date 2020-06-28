@@ -56,7 +56,6 @@ def main(loss):
         x_noshift_background, x_upshift_background, x_downshift_background,\
         test_size=0.5, random_state=1234
     )
-    
 
     ####
     #### Setup model
@@ -81,7 +80,7 @@ def main(loss):
     x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
 
-    
+
     ####
     #### Define losses
     ####
@@ -121,13 +120,13 @@ def main(loss):
     ## Negative Log Likelihood loss with nuisance
     def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
         nll0 = null
-        # parameters = [mu, theta]
 
+        # parameters = [mu, theta]
         ## Histograms of events separated by decision boundary
-        sig = hist(tf.squeeze(model(x_sig)), bins)
-        bkg = hist(tf.squeeze(model(x_bkg)), bins)
-        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins)
-        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins)
+        sig = hist(tf.squeeze(model(x_sig)) * (50. / 25000.), bins)
+        bkg = hist(tf.squeeze(model(x_bkg)) * (1000. / 25000.), bins)
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)) * (1000. / 25000.), bins)
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)) * (1000. / 25000.), bins)
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
@@ -170,6 +169,7 @@ def main(loss):
 
 
     def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
+        #with tf.device('/cpu:0'):
         with tf.GradientTape() as backprop:
             loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
@@ -199,7 +199,6 @@ def main(loss):
 
     optimizer = tf.keras.optimizers.Adam()
 
-    
     ####
     #### Pretraining decisions
     ####
