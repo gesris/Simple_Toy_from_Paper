@@ -45,15 +45,23 @@ def main(loss):
     x_noshift_signal, x_upshift_signal, x_downshift_signal,\
     x_noshift_background, x_upshift_background, x_downshift_background,\
     y, w = pickle.load(open("train.pickle", "rb"))
+
+    w_sumsig = np.sum(w[y == 1])
+    w_sumbkg = np.sum(w[y == 0])
+    w_class = np.zeros(w.shape)
+    w_class[y == 1] = (w_sumsig + w_sumbkg) / w_sumsig
+    w_class[y == 0] = (w_sumsig + w_sumbkg) / w_sumbkg
     
     x_train_noshift_signal, x_val_noshift_signal,\
     x_train_upshift_signal, x_val_upshift_signal,\
     x_train_downshift_signal, x_val_downshift_signal,\
     x_train_noshift_background, x_val_noshift_background,\
     x_train_upshift_background, x_val_upshift_background,\
-    x_train_downshift_background, x_val_downshift_background = train_test_split(
+    x_train_downshift_background, x_val_downshift_background,\
+    w_train, w_val, w_class_train, w_class_val = train_test_split(
         x_noshift_signal, x_upshift_signal, x_downshift_signal,\
         x_noshift_background, x_upshift_background, x_downshift_background,\
+        w, w_class,\
         test_size=0.5, random_state=1234
     )
 
@@ -73,12 +81,16 @@ def main(loss):
     x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
+    w = tf.Variable(w_train, tf.float32, shape=[batch_len])
+    w_class = tf.Variable(w_class_train, tf.float32, shape=[batch_len])
 
     # Validation data
     x_signal_noshift_val = tf.Variable(x_val_noshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift_val = tf.Variable(x_val_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
+    w_val = tf.Variable(w_val, tf.float32, shape=[batch_len])
+    w_class_val = tf.Variable(w_class_val, tf.float32, shape=[batch_len])
 
 
     ####
@@ -118,15 +130,15 @@ def main(loss):
 
 
     ## Negative Log Likelihood loss with nuisance
-    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
+    def loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_):
         nll0 = null
 
         # parameters = [mu, theta]
         ## Histograms of events separated by decision boundary
-        sig = hist(tf.squeeze(model(x_sig)), bins) * (50. / 25000.)
-        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
-        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
-        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
+        sig = hist(tf.squeeze(model(x_sig)), bins) * batch_scale * w_
+        bkg = hist(tf.squeeze(model(x_bkg)), bins) * batch_scale * w_
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * batch_scale * w_
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * batch_scale * w_
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
@@ -177,12 +189,10 @@ def main(loss):
 
 
     ## Cross Entropy Loss
-    def loss_ce(model, x_sig, x_bkg):
+    def loss_ce(model, x_sig, x_bkg, w_, w_class_):
         f_sig = model(x_sig)
         f_bkg = model(x_bkg)
-        ce_loss = -tf.math.reduce_mean(
-            tf.math.log(tf.maximum(f_sig, 1e-9)) + tf.math.log(tf.maximum((1 - f_bkg), 1e-9))
-        )
+        ce_loss = -tf.math.reduce_mean(tf.math.log(tf.maximum(f_sig, 1e-9)) + tf.math.log(tf.maximum((1 - f_bkg), 1e-9)) * w_ * w_class_)
         return ce_loss
 
 
@@ -218,18 +228,18 @@ def main(loss):
     ## Summery of possible losses
     def model_loss_and_grads(loss):
         if(loss == "Cross Entropy Loss"):
-            model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift)
-            model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val)
+            model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift, w, w_class)
+            model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val, w_val, w_class_val)
             model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val)
             model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val)
             model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
 
         return model_loss, model_loss_val, model_grads
