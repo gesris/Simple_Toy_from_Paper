@@ -159,11 +159,11 @@ def main(loss):
 
 
     ## Standard Deviation loss with and without nuisance
-    def loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
+    def loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_):
         with tf.GradientTape(persistent=True) as second_order:
             with tf.GradientTape() as first_order:
                 if(nuisance_is_true):
-                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_)
                     gradnll = first_order.gradient(loss_value_nll, parameters)
                     hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
                     hessian_matrix = tf.stack(hessian_rows, axis=-1)
@@ -172,7 +172,7 @@ def main(loss):
                     standard_deviation = tf.math.sqrt(poi)
                 else:
                     mu_sd_no_nuisance = parameters[0]
-                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
+                    loss_value_nll = loss_nll(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_)
                     gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
                     gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
                     covariance = 1 / gradgradnll
@@ -180,10 +180,10 @@ def main(loss):
         return standard_deviation
 
 
-    def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true):
+    def grad_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_):
         #with tf.device('/cpu:0'):
         with tf.GradientTape() as backprop:
-            loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true)
+            loss_value = loss_sd(model, x_sig, x_bkg, x_bkg_up, x_bkg_down, parameters, nuisance_is_true, w_)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
@@ -196,9 +196,9 @@ def main(loss):
         return ce_loss
 
 
-    def grad_ce(model, x_sig, x_bkg):
+    def grad_ce(model, x_sig, x_bkg, w_, w_class_):
         with tf.GradientTape() as backprop:
-            loss_value = loss_ce(model, x_sig, x_bkg)
+            loss_value = loss_ce(model, x_sig, x_bkg, w_, w_class_)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
@@ -230,17 +230,17 @@ def main(loss):
         if(loss == "Cross Entropy Loss"):
             model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift, w, w_class)
             model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val, w_val, w_class_val)
-            model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift)
+            model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift, w, w_class)
 
         elif(loss == "Standard Deviation Loss"):
             model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
             model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
             model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
             model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w)
 
         return model_loss, model_loss_val, model_grads
 
