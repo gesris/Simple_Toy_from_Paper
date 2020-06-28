@@ -14,12 +14,10 @@ do
     sed -i "/plot_label = .*/c\    plot_label = \"$PLOTLABEL\"" ./create_data.py
 
     git commit -m "changing data for different plots" create_data.py
-    git push origin master
+    git push origin change_signalscale
 
     ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && git pull && sh master_plot.sh'
 
-    #scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/
-    #scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/plot_nll_$PLOTLABEL.png
     scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/
     scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/plot_nll_$PLOTLABEL.png
 
