@@ -7,7 +7,7 @@ sh /home/gristo/Simple_Toy_from_Paper/make_plots.sh
 echo " "
 echo "Initiating mu-fit."
 echo " "
-sleep 1s#
+sleep 1s
 
 deactivate
 
