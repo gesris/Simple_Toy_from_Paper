@@ -83,16 +83,16 @@ def main(loss):
     x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
-    w_signal = tf.Variable(w_train_sig, tf.float32, shape=[batch_len])
-    w_class_signal = tf.Variable(w_class_train_sig, tf.float32, shape=[batch_len])
+    w_signal_ = tf.Variable(w_train_sig, tf.float32, shape=[batch_len])
+    w_class_signal_ = tf.Variable(w_class_train_sig, tf.float32, shape=[batch_len])
 
     # Validation data
     x_signal_noshift_val = tf.Variable(x_val_noshift_signal, tf.float32, shape=[batch_len, 2])
     x_background_noshift_val = tf.Variable(x_val_noshift_background, tf.float32, shape=[batch_len, 2])
     x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
     x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
-    w_val_signal = tf.Variable(w_val_sig, tf.float32, shape=[batch_len])
-    w_class_val_signal = tf.Variable(w_class_val_sig, tf.float32, shape=[batch_len])
+    w_val_signal_ = tf.Variable(w_val_sig, tf.float32, shape=[batch_len])
+    w_class_val_signal_ = tf.Variable(w_class_val_sig, tf.float32, shape=[batch_len])
 
 
     ####
@@ -230,19 +230,19 @@ def main(loss):
     ## Summery of possible losses
     def model_loss_and_grads(loss):
         if(loss == "Cross Entropy Loss"):
-            model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift, w_signal, w_class_signal)
-            model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val, w_val_signal, w_class_val_signal)
-            model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift, w_signal, w_class_signal)
+            model_loss      = loss_ce(model, x_signal_noshift, x_background_noshift, w_signal_, w_class_signal_)
+            model_loss_val  = loss_ce(model, x_signal_noshift_val, x_background_noshift_val, w_val_signal_, w_class_val_signal_)
+            model_grads     = grad_ce(model, x_signal_noshift, x_background_noshift, w_signal_, w_class_signal_)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val_signal)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal_)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val_signal_)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal_)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal)
-            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val_signal)
-            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal)
+            model_loss      = loss_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal_)
+            model_loss_val  = loss_sd(model, x_signal_noshift_val, x_background_noshift_val, x_background_upshift_val, x_background_downshift_val, [mu, theta], nuisance_is_true, w_val_signal_)
+            model_grads     = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], nuisance_is_true, w_signal_)
 
         return model_loss, model_loss_val, model_grads
 
@@ -259,7 +259,7 @@ def main(loss):
     ######################\n")
         for warmup_step in tqdm(range(0, 70)):
             ## Warmup trains model without nuisance to increase stability
-            grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], False, w_signal)    # nuisance has to be FALSE here
+            grads = grad_sd(model, x_signal_noshift, x_background_noshift, x_background_upshift, x_background_downshift, [mu, theta], False, w_signal_)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
     
 
