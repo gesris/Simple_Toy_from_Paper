@@ -27,8 +27,9 @@ def make_dataset(num_events, shift):
     num_events = num_events // 2
     x1 = np.vstack(make_sig(num_events))
     x2 = np.vstack(make_bkg(num_events, shift))
-    y = np.hstack([np.ones(num_events), np.zeros(num_events)])
-    return x1, x2, y
+    y1 = np.hstack([np.ones(num_events)])
+    y2 = np.hstack([np.zeros(num_events)])
+    return x1, x2, y1, y2
 
 def main(shift_scale, shift, plot_label):
         
@@ -47,15 +48,16 @@ def main(shift_scale, shift, plot_label):
     print("\nCreating data with shift: {}, shift scale: {}, plot label: {}".format(shift, shift_scale, plot_label))
 
     # dataset with events containing each x-/y-coordinates
-    x_train_noshift_signal, x_train_noshift_background, y_train = make_dataset(num_train, 0)
+    x_train_noshift_signal, x_train_noshift_background, y_train_signal, y_train_background = make_dataset(num_train, 0)
     x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
     x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
 
 
     # weight for normalization
-    w_train = np.ones(y_train.shape)
-    w_train[y_train == 1] = signal_scale
-    w_train[y_train == 0] = background_scale
+    w_train_signal = np.ones(y_train_signal.shape)
+    w_train_signal[y_train_signal == 1] = signal_scale
+    w_train_background = np.ones(y_train_background.shape)
+    w_train_background[y_train_background == 0] = background_scale
 
     
     ####
@@ -65,13 +67,14 @@ def main(shift_scale, shift, plot_label):
     num_test = num_train
 
     # dataset with events containing each x-/y-coordinates
-    x_test_noshift_signal, x_test_noshift_background, y_test = make_dataset(num_test, 0)
+    x_test_noshift_signal, x_test_noshift_background, y_test_signal, y_test_background = make_dataset(num_test, 0)
     x_test_upshift_signal, x_test_upshift_background, _ = make_dataset(num_test, shift)
     x_test_downshift_signal, x_test_downshift_background, _ = make_dataset(num_test, -shift)
 
-    w_test = np.ones(y_test.shape)
-    w_test[y_test == 1] = signal_scale
-    w_test[y_test == 0] = background_scale
+    w_test_signal = np.ones(y_test_signal.shape)
+    w_test_signal[y_test_signal == 1] = signal_scale
+    w_test_background = np.ones(y_test_background.shape)
+    w_test_background[y_test_background == 0] = background_scale
 
 
     # summerize events with 2D histogram
@@ -115,11 +118,12 @@ def main(shift_scale, shift, plot_label):
     makeplot([hist_x_train_signal, hist_x_train_noshift_background, hist_x_train_upshift_background, hist_x_train_downshift_background])
 
     # save training data into pickle
-    pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
+    pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train_signal, y_train_background
+    , w_train_signal, w_train_background], open("train.pickle", "wb"))
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
     
     # saving seting data into pickle
-    pickle.dump([x_test_noshift_signal, x_test_upshift_signal, x_test_downshift_signal, x_test_noshift_background, x_test_upshift_background, x_test_downshift_background, y_test, w_test], open("test.pickle", "wb"))
+    pickle.dump([x_test_noshift_signal, x_test_upshift_signal, x_test_downshift_signal, x_test_noshift_background, x_test_upshift_background, x_test_downshift_background, y_test_signal, y_test_background, w_test_signal, w_test_background], open("test.pickle", "wb"))
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
