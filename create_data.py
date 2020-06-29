@@ -40,8 +40,8 @@ def main(shift_scale, shift, plot_label):
     num_train = 100000
     signal_exp = 50
     background_exp = 1000
-    signal_scale = signal_exp / float(num_train / 4.)
-    background_scale = background_exp / float(num_train / 4.)
+    signal_scale = signal_exp / float(num_train)
+    background_scale = background_exp / float(num_train)
 
 
     print("\nCreating data with shift: {}, shift scale: {}, plot label: {}".format(shift, shift_scale, plot_label))
@@ -56,6 +56,23 @@ def main(shift_scale, shift, plot_label):
     w_train = np.ones(y_train.shape)
     w_train[y_train == 1] = signal_scale
     w_train[y_train == 0] = background_scale
+
+    
+    ####
+    #### Creating testing dataset
+    ####
+
+    num_test = num_train
+
+    # dataset with events containing each x-/y-coordinates
+    x_test_noshift_signal, x_test_noshift_background, y_test = make_dataset(num_test, 0)
+    x_test_upshift_signal, x_test_upshift_background, _ = make_dataset(num_test, shift)
+    x_test_downshift_signal, x_test_downshift_background, _ = make_dataset(num_test, -shift)
+
+    w_test = np.ones(y_test.shape)
+    w_test[y_test == 1] = signal_scale
+    w_test[y_test == 0] = background_scale
+
 
     # summerize events with 2D histogram
     number_of_bins = 20
@@ -99,6 +116,10 @@ def main(shift_scale, shift, plot_label):
 
     # save training data into pickle
     pickle.dump([x_train_noshift_signal, x_train_upshift_signal, x_train_downshift_signal, x_train_noshift_background, x_train_upshift_background, x_train_downshift_background, y_train, w_train], open("train.pickle", "wb"))
+    pickle.dump(plot_label, open("plot_label.pickle", "wb"))
+    
+    # saving seting data into pickle
+    pickle.dump([x_test_noshift_signal, x_test_upshift_signal, x_test_downshift_signal, x_test_noshift_background, x_test_upshift_background, x_test_downshift_background, y_test, w_test], open("test.pickle", "wb"))
     pickle.dump(plot_label, open("plot_label.pickle", "wb"))
 
 if __name__ == "__main__":
