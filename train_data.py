@@ -79,20 +79,20 @@ def main(loss):
     batch_len = None
 
     # Training data
-    x_signal_noshift = tf.Variable(x_train_noshift_signal, tf.float32, shape=[batch_len, 2])
-    x_background_noshift = tf.Variable(x_train_noshift_background, tf.float32, shape=[batch_len, 2])
-    x_background_upshift = tf.Variable(x_train_upshift_background, tf.float32, shape=[batch_len, 2])
-    x_background_downshift = tf.Variable(x_train_downshift_background, tf.float32, shape=[batch_len, 2])
-    w_signal_ = tf.Variable(w_train_sig, tf.float32, shape=[batch_len])
-    w_class_signal_ = tf.Variable(w_class_train_sig, tf.float32, shape=[batch_len])
+    x_signal_noshift = tf.Variable(x_train_noshift_signal, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_noshift = tf.Variable(x_train_noshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_upshift = tf.Variable(x_train_upshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_downshift = tf.Variable(x_train_downshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    w_signal_ = tf.Variable(w_train_sig, dtype=tf.float32, shape=[batch_len])
+    w_class_signal_ = tf.Variable(w_class_train_sig, dtype=tf.float32, shape=[batch_len])
 
     # Validation data
-    x_signal_noshift_val = tf.Variable(x_val_noshift_signal, tf.float32, shape=[batch_len, 2])
-    x_background_noshift_val = tf.Variable(x_val_noshift_background, tf.float32, shape=[batch_len, 2])
-    x_background_upshift_val = tf.Variable(x_val_upshift_background, tf.float32, shape=[batch_len, 2])
-    x_background_downshift_val = tf.Variable(x_val_downshift_background, tf.float32, shape=[batch_len, 2])
-    w_val_signal_ = tf.Variable(w_val_sig, tf.float32, shape=[batch_len])
-    w_class_val_signal_ = tf.Variable(w_class_val_sig, tf.float32, shape=[batch_len])
+    x_signal_noshift_val = tf.Variable(x_val_noshift_signal, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_noshift_val = tf.Variable(x_val_noshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_upshift_val = tf.Variable(x_val_upshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    x_background_downshift_val = tf.Variable(x_val_downshift_background, dtype=tf.float32, shape=[batch_len, 2])
+    w_val_signal_ = tf.Variable(w_val_sig, dtype=tf.float32, shape=[batch_len])
+    w_class_val_signal_ = tf.Variable(w_class_val_sig, dtype=tf.float32, shape=[batch_len])
 
 
     ####
@@ -112,9 +112,9 @@ def main(loss):
     theta = tf.Variable(0.0, trainable=True, dtype=tf.float32)
 
     # assign constant value to tensor
-    epsilon = tf.constant(1e-9, tf.float32)
-    null = tf.constant(0.0, tf.float32)
-    one = tf.constant(1.0, tf.float32)
+    epsilon = tf.constant(1e-9, dtype=tf.float32)
+    null = tf.constant(0.0, dtype=tf.float32)
+    one = tf.constant(1.0, dtype=tf.float32)
 
 
     ####
