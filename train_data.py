@@ -50,8 +50,8 @@ def main(loss):
     w_sumbkg = np.sum(w_background[y_background == 0])
     w_class_sig = np.zeros(w_signal.shape)
     w_class_bkg = np.zeros(w_background.shape)
-    w_class_sig[y == 1] = (w_sumsig + w_sumbkg) / w_sumsig
-    w_class_bkg[y == 0] = (w_sumsig + w_sumbkg) / w_sumbkg
+    w_class_sig[y_signal == 1] = (w_sumsig + w_sumbkg) / w_sumsig
+    w_class_bkg[y_background == 0] = (w_sumsig + w_sumbkg) / w_sumbkg
     
     x_train_noshift_signal, x_val_noshift_signal,\
     x_train_upshift_signal, x_val_upshift_signal,\
