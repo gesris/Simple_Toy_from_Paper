@@ -124,7 +124,7 @@ def main(loss):
         # parameters = [mu, theta]
 
         ## Histograms of events separated by decision boundary
-        sig = hist(tf.squeeze(model(x_sig)), bins) * (50. / 25000.)
+        sig = hist(tf.squeeze(model(x_sig)), bins) * (10. / 25000.)
         bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
         bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
         bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
@@ -298,7 +298,7 @@ def main(loss):
 
     model.save('./mymodel')
 
-    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * 20
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins)
     b = hist(tf.squeeze(model(x_background_noshift)), bins)
     b_up = hist(tf.squeeze(model(x_background_upshift)), bins)
     b_down = hist(tf.squeeze(model(x_background_downshift)), bins)
