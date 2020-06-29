@@ -38,7 +38,7 @@ plt.hist(bins_for_plots_middle, weights= s, bins= bins, histtype="step", lw=2, c
 plt.hist(bins_for_plots_middle, weights= b, bins= bins, histtype="step", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= b_up, bins= bins, ls="--", histtype="step", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= b_down, bins= bins, ls=":", histtype="step", lw=2, color="C1")
-plt.plot([0], [0], ls="-", lw=lw, color="C0", label="Signal")
+plt.plot([0], [0], ls="-", lw=lw, color="C0", label="Signal (x20)")
 plt.plot([0], [0], ls="-", lw=lw, color="C1", label="Background")
 plt.plot([0], [0], ls="--", lw=lw, color="C1", label="Bkg. (up-shift)")
 plt.plot([0], [0], ls=":", lw=lw, color="C1", label="Bkg. (down-shift)")
