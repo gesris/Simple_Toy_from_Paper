@@ -49,8 +49,8 @@ def main(shift_scale, shift, plot_label):
 
     # dataset with events containing each x-/y-coordinates
     x_train_noshift_signal, x_train_noshift_background, y_train_signal, y_train_background = make_dataset(num_train, 0)
-    x_train_upshift_signal, x_train_upshift_background, _ = make_dataset(num_train, shift)
-    x_train_downshift_signal, x_train_downshift_background, _ = make_dataset(num_train, -shift)
+    x_train_upshift_signal, x_train_upshift_background, _, _ = make_dataset(num_train, shift)
+    x_train_downshift_signal, x_train_downshift_background, _, _ = make_dataset(num_train, -shift)
 
 
     # weight for normalization
@@ -68,8 +68,8 @@ def main(shift_scale, shift, plot_label):
 
     # dataset with events containing each x-/y-coordinates
     x_test_noshift_signal, x_test_noshift_background, y_test_signal, y_test_background = make_dataset(num_test, 0)
-    x_test_upshift_signal, x_test_upshift_background, _ = make_dataset(num_test, shift)
-    x_test_downshift_signal, x_test_downshift_background, _ = make_dataset(num_test, -shift)
+    x_test_upshift_signal, x_test_upshift_background, _, _ = make_dataset(num_test, shift)
+    x_test_downshift_signal, x_test_downshift_background, _, _ = make_dataset(num_test, -shift)
 
     w_test_signal = np.ones(y_test_signal.shape)
     w_test_signal[y_test_signal == 1] = signal_scale
