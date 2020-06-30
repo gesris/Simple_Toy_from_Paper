@@ -128,10 +128,10 @@ def main(loss):
         #bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
         #bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
         #bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
-        sig = hist(tf.squeeze(model(x_sig)), bins) * (2396. / 25000.)
-        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (458504. / 25000.)
-        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (458504. / 25000.)
-        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (458504. / 25000.)
+        sig = hist(tf.squeeze(model(x_sig)), bins) * (2387. / 25000.)
+        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (509271. / 25000.)
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (509271. / 25000.)
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (509271. / 25000.)
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
@@ -306,10 +306,10 @@ def main(loss):
     #b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
     #b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
     #b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
-    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (2396. / 25000.)
-    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (458504. / 25000.)
-    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (458504. / 25000.)
-    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (458504. / 25000.)
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (2387. / 25000.)
+    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (509271. / 25000.)
+    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (509271. / 25000.)
+    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (509271. / 25000.)
 
     print("SIGNAL:           {}, SUM:   {}".format(s, np.sum(s)))
     print("BACKGROUND:       {}, SUM:   {}".format(b, np.sum(b)))
