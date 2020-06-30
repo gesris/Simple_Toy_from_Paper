@@ -271,7 +271,7 @@ def main(loss):
     min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
-    for epoch in range(1, 1000):
+    for epoch in range(1, 80):
         current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
         ## apply grads and vars
