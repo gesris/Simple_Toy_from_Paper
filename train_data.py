@@ -86,7 +86,7 @@ def main(loss):
     #### Define losses
     ####
     
-    bins = np.linspace(0.0, 1.0, 9)
+    bins = np.linspace(0.0, 1.0, 3)
     bin_edges = bins
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
