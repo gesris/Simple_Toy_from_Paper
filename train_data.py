@@ -124,14 +124,10 @@ def main(loss):
         # parameters = [mu, theta]
 
         ## Histograms of events separated by decision boundary
-        #sig = hist(tf.squeeze(model(x_sig)), bins) * (10. / 25000.)
-        #bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
-        #bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
-        #bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
-        sig = hist(tf.squeeze(model(x_sig)), bins) * (2387. / 25000.)
-        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (509271. / 25000.)
-        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (509271. / 25000.)
-        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (509271. / 25000.)
+        sig = hist(tf.squeeze(model(x_sig)), bins) * (50. / 25000.)
+        bkg = hist(tf.squeeze(model(x_bkg)), bins) * (1000. / 25000.)
+        bkg_up = hist(tf.squeeze(model(x_bkg_up)), bins) * (1000. / 25000.)
+        bkg_down = hist(tf.squeeze(model(x_bkg_down)), bins) * (1000. / 25000.)
 
         ## Calculate NLL with or without nuisance
         for i in range(0, len(sig)):
@@ -140,7 +136,7 @@ def main(loss):
                 + tf.minimum(parameters[1], null) * (bkg[i] - bkg_down[i])
             else:
                 sys = tf.constant(0.0, dtype=tf.float32)
-            exp = parameters[0] * sig[i] + bkg[i]
+            exp = parameters[0] * sig[i] + bkg[i] + sys
             obs = sig[i] + bkg[i]
 
             nll0 -= tfp.distributions.Poisson(tf.maximum(exp + sys, epsilon)).log_prob(tf.maximum(obs, epsilon))
