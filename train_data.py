@@ -86,7 +86,7 @@ def main(loss):
     #### Define losses
     ####
     
-    bins = np.linspace(0.0, 1.0, 5)
+    bins = np.linspace(0.0, 1.0, 9)
     bin_edges = bins
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
@@ -136,7 +136,7 @@ def main(loss):
                 + tf.minimum(parameters[1], null) * (bkg[i] - bkg_down[i])
             else:
                 sys = tf.constant(0.0, dtype=tf.float32)
-            exp = parameters[0] * sig[i] + bkg[i] + sys
+            exp = parameters[0] * sig[i] + bkg[i]
             obs = sig[i] + bkg[i]
 
             nll0 -= tfp.distributions.Poisson(tf.maximum(exp + sys, epsilon)).log_prob(tf.maximum(obs, epsilon))
