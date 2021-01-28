@@ -272,7 +272,6 @@ def main(loss):
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
-        print("\n\nTHETA: {}\nMU: {}".format(theta.numpy(), mu.numpy()))
 
         ## monitor loss
         steps.append(epoch)
