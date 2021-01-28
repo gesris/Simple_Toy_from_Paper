@@ -276,6 +276,7 @@ def main(loss):
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
+        print("\n\nTHETA: {}\nMU: {}".format(theta.numpy(), mu.numpy()))
 
         ## monitor loss
         steps.append(epoch)
@@ -302,14 +303,10 @@ def main(loss):
 
     model.save('./mymodel')
 
-    #s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (10. / 25000.)
-    #b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
-    #b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
-    #b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
-    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (2387. / 25000.)
-    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (509271. / 25000.)
-    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (509271. / 25000.)
-    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (509271. / 25000.)
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (50. / 25000.)
+    b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
+    b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
+    b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
 
     print("SIGNAL:           {}, SUM:   {}".format(s, np.sum(s)))
     print("BACKGROUND:       {}, SUM:   {}".format(b, np.sum(b)))
