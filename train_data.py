@@ -42,19 +42,19 @@ def main(loss):
     #### Loading data and splitting into training and validation with same size
     ####
 
-    x, x_up, x_down, y, w = pickle.load(open("train.pickle", "rb"))
+    x_, x_up_, x_down_, y_, w_ = pickle.load(open("train.pickle", "rb"))
 
     # Compute class weights for CE loss
-    w_sumsig = np.sum(w[y == 1])
-    w_sumbkg = np.sum(w[y == 0])
-    w_class = np.zeros(w.shape)
-    w_class[y == 1] = (w_sumsig + w_sumbkg) / w_sumsig
-    w_class[y == 0] = (w_sumsig + w_sumbkg) / w_sumbkg
+    w_sumsig = np.sum(w_[y_ == 1])
+    w_sumbkg = np.sum(w_[y_ == 0])
+    w_class = np.zeros(w_.shape)
+    w_class[y_ == 1] = (w_sumsig + w_sumbkg) / w_sumsig
+    w_class[y_ == 0] = (w_sumsig + w_sumbkg) / w_sumbkg
     
 
     ## Make training and validation datasets
-    x_train, x_val, x_up_train, x_up_val, x_down_train, x_down_val, y_train, y_val, w_train, w_val, w_class_train, w_class_val = train_test_split(
-        x, x_up, x_down, y, w, w_class, test_size=0.5, random_state=1234)
+    x_train, x_val_, x_up_train, x_up_val_, x_down_train, x_down_val_, y_train, y_val, w_train, w_val, w_class_train, w_class_val = train_test_split(
+        x_, x_up_, x_down_, y_, w_, w_class, test_size=0.5, random_state=1234)
     
 
     ####
@@ -76,9 +76,9 @@ def main(loss):
     x_down = tf.Variable(x_down_train, tf.float32, shape=[batch_len, 2])
 
     # Validation data
-    x_val = tf.Variable(x_val, tf.float32, shape=[batch_len, 2])
-    x_up_val = tf.Variable(x_up_val, tf.float32, shape=[batch_len, 2])
-    x_down_val = tf.Variable(x_down_val, tf.float32, shape=[batch_len, 2])
+    x_val = tf.Variable(x_val_, tf.float32, shape=[batch_len, 2])
+    x_up_val = tf.Variable(x_up_val_, tf.float32, shape=[batch_len, 2])
+    x_down_val = tf.Variable(x_down_val_, tf.float32, shape=[batch_len, 2])
 
 
     
@@ -113,11 +113,7 @@ def main(loss):
             right_edge_ = tf.constant(right_edge, tf.float32)
             left_edge_ = tf.constant(left_edge, tf.float32)
 
-            print("SHAPE X: {}".format(tf.shape(x)))
-            print("SHAPE X: {}".format(x))
-            print("SHAPE Y: {}".format(tf.shape(y)))
-            print("SHAPE W: {}".format(tf.shape(w)))
-            print("SHAPE Batch scale: {}".format(tf.shape(batch_scale)))
+
             ## Nominal
             mask = mask_algo(model(x), right_edge_, left_edge_)
             sig = tf.reduce_sum(mask * y * w * batch_scale)
@@ -209,7 +205,7 @@ def main(loss):
     else:
         pass
 
-    nll0 = loss_nll(model, x, y, w, right_edges, left_edges, mu, theta, nuisance_is_true)
+    nll0 = loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, nuisance_is_true)
     nll0_val = loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, nuisance_is_true)
 
     
@@ -223,9 +219,9 @@ def main(loss):
     ## Summery of possible losses
     def model_loss_and_grads(loss):
         if(loss == "Cross Entropy Loss"):
-            model_loss      = loss_ce(model, x, y)
+            model_loss      = loss_ce(model, x, y_train)
             model_loss_val  = loss_ce(model, x_val, y_val)
-            model_grads     = grad_ce(model, x, y)
+            model_grads     = grad_ce(model, x, y_train)
 
         elif(loss == "Standard Deviation Loss"):
             model_loss      = loss_sd(nll0, [mu, theta], nuisance_is_true)
@@ -316,16 +312,16 @@ def main(loss):
         
         ## Nominal
         mask = mask_algo(model(x), right_edge_, left_edge_)
-        s.append(tf.reduce_sum(mask * y * w * batch_scale))
-        b.append(tf.reduce_sum(mask * (one - y) * w * batch_scale))
+        s.append(tf.reduce_sum(mask * y_train * w_train * batch_scale))
+        b.append(tf.reduce_sum(mask * (one - y_train) * w_train * batch_scale))
 
 
         ## Shifts
         mask_up = mask_algo(model(x_up), right_edge_, left_edge_)
-        b_up.append(tf.reduce_sum(mask_up * (one - y) * w * batch_scale))
+        b_up.append(tf.reduce_sum(mask_up * (one - y_train) * w_train * batch_scale))
 
         mask_down = mask_algo(model(x_down), right_edge_, left_edge_)
-        b_down.append(tf.reduce_sum(mask_down * (one - y) * w * batch_scale))
+        b_down.append(tf.reduce_sum(mask_down * (one - y_train) * w_train * batch_scale))
 
     pickle.dump([s, b, b_up, b_down, bins], open("plot_histogram.pickle", "wb"))
 
