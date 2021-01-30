@@ -113,7 +113,10 @@ def main(loss):
             right_edge_ = tf.constant(right_edge, tf.float32)
             left_edge_ = tf.constant(left_edge, tf.float32)
 
-            
+            print("SHAPE X: {}".format(tf.shape(x)))
+            print("SHAPE Y: {}".format(tf.shape(y)))
+            print("SHAPE W: {}".format(tf.shape(w)))
+            print("SHAPE Batch scale: {}".format(tf.shape(batch_scale)))
             ## Nominal
             mask = mask_algo(model(x), right_edge_, left_edge_)
             sig = tf.reduce_sum(mask * y * w * batch_scale)
