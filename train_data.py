@@ -89,7 +89,7 @@ def main(loss):
     #### Define losses
     ####
     
-    bins = np.linspace(0.0, 1.0, 9)
+    bins = np.linspace(0.0, 1.0, 3)
     mask_algo = binfunction
     batch_scale = tf.constant(2.0, tf.float32)
     
@@ -261,7 +261,7 @@ def main(loss):
     loss_validation_list = []
     max_patience = 30
     patience = max_patience
-    max_steps = 1000
+    max_steps = 500
 
     ## initial loss:
     min_loss, _, _ = model_loss_and_grads(loss)
