@@ -71,8 +71,8 @@ def main(shift_scale, shift, plot_label):
     ##  Summerize events with 2D histogram
     number_of_bins = 20
     bins = (number_of_bins, number_of_bins)
-    xlim = -3
-    ylim = 5
+    xlim = (-3, 5)
+    ylim = (-3, 5)
 
     hist_x_train_signal = np.histogram2d(x_test[y_test==1][:, 0], x_test[y_test==1][:, 1], bins=bins, range=(xlim, ylim), density=True)
     hist_x_train_noshift_background = np.histogram2d(x_test[y_test==0][:, 0], x_test[y_test==0][:, 1], bins=bins, range=(xlim, ylim), density=True)
