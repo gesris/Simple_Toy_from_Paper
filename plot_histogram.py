@@ -34,7 +34,7 @@ for i in range(0, len(bins) - 1):
 print("\nPlotting histogram\n")
 lw = 2
 plt.figure(figsize=(6, 6))
-plt.hist(bins_for_plots_middle, weights= s, bins= bins, histtype="step", lw=2, color="C0")
+plt.hist(bins_for_plots_middle, weights= s * 20, bins= bins, histtype="step", lw=2, color="C0")
 plt.hist(bins_for_plots_middle, weights= b, bins= bins, histtype="step", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= b_up, bins= bins, ls="--", histtype="step", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= b_down, bins= bins, ls=":", histtype="step", lw=2, color="C1")

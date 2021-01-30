@@ -1,5 +1,13 @@
+0.0,1.0,1.0,SD_no_nuisance1
+1.0,0.0,1.0,SD_no_nuisance2
+1.0,1.0,1.0,SD_no_nuisance3
+0.0,0.0,1.0,SD_no_nuisance4
 0.0,1.0,1.0,SD_with_nuisance1
 1.0,0.0,1.0,SD_with_nuisance2
 1.0,1.0,1.0,SD_with_nuisance3
 0.0,0.0,1.0,SD_with_nuisance4
+0.0,1.0,1.0,CE_1
+1.0,0.0,1.0,CE_2
+1.0,1.0,1.0,CE_3
+0.0,0.0,1.0,CE_4
 0.0,1.0,1.0,CE_default

@@ -14,6 +14,7 @@ do
     sed -i "/plot_label = .*/c\    plot_label = \"$PLOTLABEL\"" ./create_data.py
 
     git commit -m "changing data for different plots" create_data.py
+    git commit -m "bugfixes" .
     git push origin master
 
     ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && git pull && sh master_plot.sh'
