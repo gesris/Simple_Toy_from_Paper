@@ -259,9 +259,9 @@ def main(loss):
     steps = []
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 30
+    max_patience = 15
     patience = max_patience
-    max_steps = 500
+    max_steps = 80
 
     ## initial loss:
     min_loss, _, _ = model_loss_and_grads(loss)
