@@ -4,10 +4,13 @@ import tensorflow as tf
 tf.random.set_seed(1234)   
 import tensorflow_probability as tfp
 import pickle
-import matplotlib
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
+mpl.rc("font", size=16, family="serif")
 
 
 
@@ -256,14 +259,15 @@ def main(loss):
     steps = []
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 15
+    max_patience = 30
     patience = max_patience
+    max_steps = 1000
 
     ## initial loss:
     min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
-    for epoch in range(1, 80):
+    for epoch in range(1, max_steps):
         current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
         ## apply grads and vars
@@ -299,10 +303,10 @@ def main(loss):
     b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
     b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
 
-    print("SIGNAL:           {}, SUM:   {}".format(s, np.sum(s)))
-    print("BACKGROUND:       {}, SUM:   {}".format(b, np.sum(b)))
-    print("BACKGROUND UP:    {}, SUM:   {}".format(b_up, np.sum(b_up)))
-    print("BACKGROUND DOWN:  {}, SUM:   {}".format(b_down, np.sum(b_down)))
+    print("SIGNAL SUM:   {}".format(np.sum(s)))
+    print("BACKGROUND SUM:   {}".format(np.sum(b)))
+    print("BACKGROUND UP SUM:   {}".format(np.sum(b_up)))
+    print("BACKGROUND DOWN SUM:   {}".format(np.sum(b_down)))
 
     pickle.dump([s, b, b_up, b_down, bins], open("plot_histogram.pickle", "wb"))
 
