@@ -114,6 +114,7 @@ def main(loss):
             left_edge_ = tf.constant(left_edge, tf.float32)
 
             print("SHAPE X: {}".format(tf.shape(x)))
+            print("SHAPE X: {}".format(x))
             print("SHAPE Y: {}".format(tf.shape(y)))
             print("SHAPE W: {}".format(tf.shape(w)))
             print("SHAPE Batch scale: {}".format(tf.shape(batch_scale)))
