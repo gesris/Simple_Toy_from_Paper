@@ -87,9 +87,6 @@ def main(loss):
     ####
     
     bins = np.linspace(0.0, 1.0, 9)
-    bin_edges = bins
-    right_edges = bin_edges[1:] # all except the first
-    left_edges = bin_edges[:-1] # all except the last
     mask_algo = binfunction
     batch_scale = tf.constant(2.0, tf.float32)
     
@@ -101,7 +98,6 @@ def main(loss):
     # assign constant value to tensor
     epsilon = tf.constant(1e-9, tf.float32)
     null = tf.constant(0.0, tf.float32)
-    one = tf.constant(1.0, tf.float32)
 
 
     ####
