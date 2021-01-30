@@ -80,9 +80,6 @@ def main(loss):
     x_up_val = tf.Variable(x_up_val, tf.float32, shape=[batch_len, 2])
     x_down_val = tf.Variable(x_down_val, tf.float32, shape=[batch_len, 2])
 
-    ## Class weights
-    w = tf.placeholder(tf.float32, shape=[batch_len])
-    w_class = tf.placeholder(tf.float32, shape=[batch_len])
 
     
     ####
