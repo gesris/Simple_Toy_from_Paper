@@ -146,12 +146,11 @@ def main(loss):
 
 
     ## Standard Deviation loss with and without nuisance
-    def loss_sd(nll0, parameters, nuisance_is_true):
+    def loss_sd(nll_function, parameters, nuisance_is_true):
         with tf.GradientTape(persistent=True) as second_order:
             with tf.GradientTape() as first_order:
                 if(nuisance_is_true):
-                    loss_value_nll = nll0
-                    gradnll = first_order.gradient(loss_value_nll, parameters)
+                    gradnll = first_order.gradient(nll_function, parameters)
                     hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
                     hessian_matrix = tf.stack(hessian_rows, axis=-1)
                     variance = tf.linalg.inv(hessian_matrix)
@@ -159,17 +158,16 @@ def main(loss):
                     standard_deviation = tf.math.sqrt(poi)
                 else:
                     mu_sd_no_nuisance = parameters[0]
-                    loss_value_nll = nll0
-                    gradnll = first_order.gradient(loss_value_nll, mu_sd_no_nuisance)
+                    gradnll = first_order.gradient(nll_function, mu_sd_no_nuisance)
                     gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
                     covariance = 1 / gradgradnll
                     standard_deviation = tf.math.sqrt(covariance)
         return standard_deviation
 
 
-    def grad_sd(nll0, parameters, nuisance_is_true):
+    def grad_sd(nll_function, parameters, nuisance_is_true):
         with tf.GradientTape() as backprop:
-            loss_value = loss_sd(nll0, parameters, nuisance_is_true)
+            loss_value = loss_sd(nll_function, parameters, nuisance_is_true)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
@@ -217,21 +215,21 @@ def main(loss):
 
 
     ## Summery of possible losses
-    def model_loss_and_grads(loss):
+    def model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val):
         if(loss == "Cross Entropy Loss"):
             model_loss      = loss_ce(model, x, y_train)
             model_loss_val  = loss_ce(model, x_val, y_val)
             model_grads     = grad_ce(model, x, y_train)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(nll0, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(nll0_val, [mu, theta], nuisance_is_true)
-            model_grads     = grad_sd(nll0, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd(nll_function, [mu, theta], nuisance_is_true)
+            model_loss_val  = loss_sd(nll_function_val, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(nll_function, [mu, theta], nuisance_is_true)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(nll0, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(nll0_val, [mu, theta], nuisance_is_true)
-            model_grads     = grad_sd(nll0, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd(nll_function, [mu, theta], nuisance_is_true)
+            model_loss_val  = loss_sd(nll_function_val, [mu, theta], nuisance_is_true)
+            model_grads     = grad_sd(nll_function, [mu, theta], nuisance_is_true)
 
         return model_loss, model_loss_val, model_grads
 
@@ -265,11 +263,14 @@ def main(loss):
     patience = max_patience
 
     ## initial loss:
-    min_loss, _, _ = model_loss_and_grads(loss)
+    nll_function = loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, nuisance_is_true)
+    nll_function_val = loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, nuisance_is_true)
+
+    min_loss, _, _ = model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val)
 
     ## Training loop
     for epoch in range(1, max_steps):
-        current_loss, current_loss_val, grads = model_loss_and_grads(loss)
+        current_loss, current_loss_val, grads = model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val)
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
