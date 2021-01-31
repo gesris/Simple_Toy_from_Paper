@@ -230,14 +230,14 @@ def main(loss):
             model_grads     = grad_ce(model, x, y_train, w_train, w_class_train)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd([mu, theta], with_nuisance=False, training=True)
-            model_loss_val  = loss_sd([mu, theta], with_nuisance=False, training=False)
-            model_grads     = grad_sd([mu, theta], with_nuisance=False)
+            model_loss      = loss_sd(mu, theta, with_nuisance=False, training=True)
+            model_loss_val  = loss_sd(mu, theta, with_nuisance=False, training=False)
+            model_grads     = grad_sd(mu, theta, with_nuisance=False)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd([mu, theta], with_nuisance=True, training=True)
-            model_loss_val  = loss_sd([mu, theta], with_nuisance=True, training=False)
-            model_grads     = grad_sd([mu, theta], with_nuisance=True)
+            model_loss      = loss_sd(mu, theta, with_nuisance=True, training=True)
+            model_loss_val  = loss_sd(mu, theta, with_nuisance=True, training=False)
+            model_grads     = grad_sd(mu, theta, with_nuisance=True)
 
         return model_loss, model_loss_val, model_grads
 
