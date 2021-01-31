@@ -9,7 +9,7 @@ import pickle
 
 # Make signal and background samples with up and down shifts in background process
 def make_sig(num_events):
-    mean = [0, 0]
+    mean = [-1, -1]
     corr = -0.0
     cov = [[1.0, corr], [corr, 1.0]]
     return np.random.multivariate_normal(mean, cov, num_events)
