@@ -38,6 +38,8 @@ def binfunction(x, right_edge, left_edge):
 
 def main(loss):
 
+    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+
     ####
     #### Loading data and splitting into training and validation with same size
     ####
