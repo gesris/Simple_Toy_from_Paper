@@ -17,7 +17,7 @@ do
     git commit -m "bugfixes" .
     git push origin test
 
-    ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && git checkout test && git pull && sh master_plot.sh'
+    ssh -t -t gristo@bms3 'cd Simple_Toy_from_Paper && git checkout test && git pull && sh master_plot.sh'
 
     #scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/
     #scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/Plots/plot_nll_$PLOTLABEL.png

@@ -12,8 +12,9 @@ from tqdm import tqdm
 ## Load Data
 model = tf.keras.models.load_model('./mymodel')
 plot_label = pickle.load(open("plot_label.pickle", "rb"))
-_, _, _, _, bins = pickle.load(open("plot_histogram.pickle", "rb"))
-bin_edges_temp = bins[:-1]
+#_, _, _, _, decision_boundary = pickle.load(open("plot_histogram.pickle", "rb"))
+decision_boundary = np.linspace(0, 1, 3)
+bin_edges_temp = decision_boundary[:-1]
 bin_edges = bin_edges_temp[1:]
 
 
