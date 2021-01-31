@@ -142,43 +142,54 @@ def main(loss):
 
 
     ## Standard Deviation loss with and without nuisance
-    def loss_sd(mu, theta, with_nuisance, training):
+    def loss_sd(mu, theta, training):
         if(training):
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
-                    if(with_nuisance):
-                        gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta)[0], [mu, theta])
-                        hessian_rows = [second_order.gradient(g, [mu, theta]) for g in tf.unstack(gradnll)]
-                        hessian_matrix = tf.stack(hessian_rows, axis=-1)
-                        variance = tf.linalg.inv(hessian_matrix)
-                        poi = variance[0][0]
-                        standard_deviation = tf.math.sqrt(poi)
-                    else:
-                        gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta)[1], mu)
-                        gradgradnll = second_order.gradient(gradnll, mu)
-                        covariance = 1 / gradgradnll
-                        standard_deviation = tf.math.sqrt(covariance)
+                    gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta)[0], [mu, theta])
+                    hessian_rows = [second_order.gradient(g, [mu, theta]) for g in tf.unstack(gradnll)]
+                    hessian_matrix = tf.stack(hessian_rows, axis=-1)
+                    variance = tf.linalg.inv(hessian_matrix)
+                    poi = variance[0][0]
+                    standard_deviation = tf.math.sqrt(poi)
         else:
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
-                    if(with_nuisance):
-                        gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta)[0], [mu, theta])
-                        hessian_rows = [second_order.gradient(g, [mu, theta]) for g in tf.unstack(gradnll)]
-                        hessian_matrix = tf.stack(hessian_rows, axis=-1)
-                        variance = tf.linalg.inv(hessian_matrix)
-                        poi = variance[0][0]
-                        standard_deviation = tf.math.sqrt(poi)
-                    else:
-                        gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta)[1], mu)
-                        gradgradnll = second_order.gradient(gradnll, mu)
-                        covariance = 1 / gradgradnll
-                        standard_deviation = tf.math.sqrt(covariance)
+                    gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta)[0], [mu, theta])
+                    hessian_rows = [second_order.gradient(g, [mu, theta]) for g in tf.unstack(gradnll)]
+                    hessian_matrix = tf.stack(hessian_rows, axis=-1)
+                    variance = tf.linalg.inv(hessian_matrix)
+                    poi = variance[0][0]
+                    standard_deviation = tf.math.sqrt(poi)
+        return standard_deviation
+
+    def loss_sd_statsonly(mu, theta, training):
+        if(training):
+            with tf.GradientTape(persistent=True) as second_order:
+                with tf.GradientTape() as first_order:
+                    gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta)[1], mu)
+                    gradgradnll = second_order.gradient(gradnll, mu)
+                    covariance = 1 / gradgradnll
+                    standard_deviation = tf.math.sqrt(covariance)
+        else:
+            with tf.GradientTape(persistent=True) as second_order:
+                with tf.GradientTape() as first_order:
+                    gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta)[1], mu)
+                    gradgradnll = second_order.gradient(gradnll, mu)
+                    covariance = 1 / gradgradnll
+                    standard_deviation = tf.math.sqrt(covariance)
         return standard_deviation
 
 
-    def grad_sd(mu, theta, with_nuisance):
+    def grad_sd(mu, theta):
         with tf.GradientTape() as backprop:
-            loss_value = loss_sd(mu, theta, with_nuisance, training=True)
+            loss_value = loss_sd(mu, theta, training=True)
+            backpropagation = backprop.gradient(loss_value, model.trainable_variables)
+        return backpropagation
+
+    def grad_sd_statsonly(mu, theta):
+        with tf.GradientTape() as backprop:
+            loss_value = loss_sd_statsonly(mu, theta, training=True)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
@@ -200,13 +211,11 @@ def main(loss):
     ####
     
     warmup_is_true = True
-    with_nuisance = True
 
     if(loss == "Cross Entropy Loss"):
         warmup_is_true = False
     elif(loss == "Standard Deviation Loss"):
         warmup_is_true = False
-        with_nuisance = False
     else:
         pass
 
@@ -226,14 +235,14 @@ def main(loss):
             model_grads     = grad_ce(model, x, y_train, w_train, w_class_train)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(mu, theta, with_nuisance=False, training=True)
-            model_loss_val  = loss_sd(mu, theta, with_nuisance=False, training=False)
-            model_grads     = grad_sd(mu, theta, with_nuisance=False)
+            model_loss      = loss_sd_statsonly(mu, theta, training=True)
+            model_loss_val  = loss_sd_statsonly(mu, theta, training=False)
+            model_grads     = grad_sd_statsonly(mu, theta)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(mu, theta, with_nuisance=True, training=True)
-            model_loss_val  = loss_sd(mu, theta, with_nuisance=True, training=False)
-            model_grads     = grad_sd(mu, theta, with_nuisance=True)
+            model_loss      = loss_sd(mu, theta, training=True)
+            model_loss_val  = loss_sd(mu, theta, training=False)
+            model_grads     = grad_sd(mu, theta)
 
         return model_loss, model_loss_val, model_grads
 
@@ -251,9 +260,9 @@ def main(loss):
         warmup_steps = 1
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
-            grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
+            grads = grad_sd_statsonly(mu, theta)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
-            model_loss_val  = loss_sd(mu, theta, with_nuisance=False, training=False)
+            model_loss_val  = loss_sd_statsonly(mu, theta, training=False)
             print("Warmup step / Loss: {}/{}".format(warmup_step, model_loss_val))
 
     
