@@ -252,13 +252,13 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 40
+        warmup_steps = 80
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
             model_loss_val  = loss_sd(mu, theta, with_nuisance=False, training=False)
-            print("Warmup loss: {}".format(model_loss_val))
+            print("Warmup step / Loss: {}/{}".format(warmup_step, model_loss_val))
 
     
 
