@@ -252,7 +252,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 1
+        warmup_steps = 30
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
@@ -271,7 +271,7 @@ def main(loss):
     max_steps = 1000
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 30
+    max_patience = 3000
     patience = max_patience
 
     ## initial loss:
