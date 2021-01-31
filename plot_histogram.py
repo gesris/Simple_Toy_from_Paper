@@ -34,8 +34,6 @@ for i in range(0, len(s_)):
     b_up.append(b_up_[i].numpy())
     b_down.append(b_down_[i].numpy())
 
-print(np.array(s) * 20)
-
 
 n = len(s)
 bins_for_plots_middle = []                  # Central Point of Bin

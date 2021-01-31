@@ -252,7 +252,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        for warmup_step in tqdm(range(0, 30)):
+        for warmup_step in tqdm(range(0, 60)):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd([mu, theta], with_nuisance=False)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
