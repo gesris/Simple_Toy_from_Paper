@@ -74,10 +74,10 @@ def main(shift_scale, shift, plot_label):
     xlim = (-3, 5)
     ylim = (-3, 5)
 
-    hist_x_train_signal = np.histogram2d(x_test[y_test==1][:, 0], x_test[y_test==1][:, 1], bins=bins, range=(xlim, ylim), density=True)
-    hist_x_train_noshift_background = np.histogram2d(x_test[y_test==0][:, 0], x_test[y_test==0][:, 1], bins=bins, range=(xlim, ylim), density=True)
-    hist_x_train_upshift_background = np.histogram2d(x_test_up[y_test==0][:, 0], x_test_up[y_test==0][:, 1], bins=bins, range=(xlim, ylim), density=True)
-    hist_x_train_downshift_background = np.histogram2d(x_test_down[y_test==0][:, 0],x_test_down[y_test==0][:, 1], bins=bins, range=(xlim, ylim), density=True)
+    hist_x_train_signal = np.histogram2d(x_test[y_test==1][:, 1], x_test[y_test==1][:, 0], bins=bins, range=(xlim, ylim), density=True)
+    hist_x_train_noshift_background = np.histogram2d(x_test[y_test==0][:, 1], x_test[y_test==0][:, 0], bins=bins, range=(xlim, ylim), density=True)
+    hist_x_train_upshift_background = np.histogram2d(x_test_up[y_test==0][:, 1], x_test_up[y_test==0][:, 0], bins=bins, range=(xlim, ylim), density=True)
+    hist_x_train_downshift_background = np.histogram2d(x_test_down[y_test==0][:, 1],x_test_down[y_test==0][:, 0], bins=bins, range=(xlim, ylim), density=True)
 
 
     def makeplot(histograms):
@@ -118,5 +118,5 @@ if __name__ == "__main__":
     shift_scale = 1.0
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = "SD_with_nuisance1"
+    plot_label = "SD_no_nuisance1"
     main(shift_scale, shift, plot_label)
