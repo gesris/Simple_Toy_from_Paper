@@ -55,7 +55,7 @@ def main(loss):
     ## Make training and validation datasets
     x_train, x_val_, x_up_train, x_up_val_, x_down_train, x_down_val_, y_train, y_val, w_train, w_val, w_class_train, w_class_val = train_test_split(
         x_, x_up_, x_down_, y_, w_, w_class, test_size=0.5, random_state=1234)
-    
+
 
     ####
     #### Setup model
@@ -104,12 +104,12 @@ def main(loss):
 
 
     ## Calculationg NLL
-    def loss_nll(model, x, y, w, right_edges, left_edges, mu, theta, nuisance_is_true):
+    def loss_nll(model, x, y, w, right_edges, left_edges, mu, theta, with_nuisance):
         nll0 = null
 
         for i, right_edge, left_edge in zip(range(len(left_edges)), right_edges, left_edges):
-            print("Bin (Right edge, left edge, mid): {:g} / {:g} / {:g}".format(
-                right_edge, left_edge, left_edge + 0.5 * (right_edge - left_edge)))
+            # print("Bin (Right edge, left edge, mid): {:g} / {:g} / {:g}".format(
+            #     right_edge, left_edge, left_edge + 0.5 * (right_edge - left_edge)))
             right_edge_ = tf.constant(right_edge, tf.float32)
             left_edge_ = tf.constant(left_edge, tf.float32)
 
@@ -128,7 +128,7 @@ def main(loss):
             bkg_down = tf.reduce_sum(mask_down * (one - y) * w * batch_scale)
 
 
-            if(nuisance_is_true):
+            if(with_nuisance):
                 sys = tf.maximum(theta, null) * (bkg_up - bkg) + tf.minimum(theta, null) * (bkg - bkg_down)
                 exp = mu * sig + bkg
                 obs = sig + bkg
@@ -139,52 +139,63 @@ def main(loss):
                 obs = sig + bkg
                 nll0 -= tfp.distributions.Poisson(tf.maximum(exp + sys, epsilon)).log_prob(tf.maximum(obs, epsilon))
             
-        if(nuisance_is_true):
+        if(with_nuisance):
             ## Normalized Gaussian constraining the nuisance
             nll0 -= tfp.distributions.Normal(loc=0, scale=1).log_prob(theta)
         return nll0
 
 
     ## Standard Deviation loss with and without nuisance
-    def loss_sd(nll_function, parameters, nuisance_is_true):
-        with tf.GradientTape(persistent=True) as second_order:
-            with tf.GradientTape() as first_order:
-                if(nuisance_is_true):
-                    gradnll = first_order.gradient(nll_function, parameters)
-                    hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
-                    hessian_matrix = tf.stack(hessian_rows, axis=-1)
-                    variance = tf.linalg.inv(hessian_matrix)
-                    poi = variance[0][0]
-                    standard_deviation = tf.math.sqrt(poi)
-                else:
-                    mu_sd_no_nuisance = parameters[0]
-                    gradnll = first_order.gradient(nll_function, mu_sd_no_nuisance)
-                    gradgradnll = second_order.gradient(gradnll, mu_sd_no_nuisance)
-                    covariance = 1 / gradgradnll
-                    standard_deviation = tf.math.sqrt(covariance)
+    def loss_sd(parameters, with_nuisance, training):
+        if(training):
+            with tf.GradientTape(persistent=True) as second_order:
+                with tf.GradientTape() as first_order:
+                    if(with_nuisance):
+                        gradnll = first_order.gradient(loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters)
+                        hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
+                        hessian_matrix = tf.stack(hessian_rows, axis=-1)
+                        variance = tf.linalg.inv(hessian_matrix)
+                        poi = variance[0][0]
+                        standard_deviation = tf.math.sqrt(poi)
+                    else:
+                        gradnll = first_order.gradient(loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
+                        gradgradnll = second_order.gradient(gradnll, parameters[0])
+                        covariance = 1 / gradgradnll
+                        standard_deviation = tf.math.sqrt(covariance)
+        else:
+            with tf.GradientTape(persistent=True) as second_order:
+                with tf.GradientTape() as first_order:
+                    if(with_nuisance):
+                        gradnll = first_order.gradient(loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters)
+                        hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
+                        hessian_matrix = tf.stack(hessian_rows, axis=-1)
+                        variance = tf.linalg.inv(hessian_matrix)
+                        poi = variance[0][0]
+                        standard_deviation = tf.math.sqrt(poi)
+                    else:
+                        gradnll = first_order.gradient(loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
+                        gradgradnll = second_order.gradient(gradnll, parameters[0])
+                        covariance = 1 / gradgradnll
+                        standard_deviation = tf.math.sqrt(covariance)
         return standard_deviation
 
 
-    def grad_sd(nll_function, parameters, nuisance_is_true):
+    def grad_sd(parameters, with_nuisance):
         with tf.GradientTape() as backprop:
-            loss_value = loss_sd(nll_function, parameters, nuisance_is_true)
+            loss_value = loss_sd(parameters, with_nuisance, training=True)
             backpropagation = backprop.gradient(loss_value, model.trainable_variables)
         return backpropagation
 
 
     ## Cross Entropy Loss
-    def loss_ce(model, x, y):
+    def loss_ce(model, x, y, w, w_class):
         f = model(x)
-        ce_loss = -tf.math.reduce_mean(
-            tf.math.log(y * tf.maximum(f, epsilon)) + (one - y) * tf.math.log(tf.maximum((1 - f), epsilon))
-        )
-        return ce_loss
+        return -tf.math.reduce_mean((y * tf.math.log(tf.maximum(f, epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f, epsilon))) * w * w_class)
 
 
-    def grad_ce(model, x, y):
+    def grad_ce(model, x, y, w, w_class):
         with tf.GradientTape() as backprop:
-            loss_value = loss_ce(model, x, y)
-            backpropagation = backprop.gradient(loss_value, model.trainable_variables)
+            backpropagation = backprop.gradient(loss_ce(model, x, y, w, w_class), model.trainable_variables)
         return backpropagation
     
     
@@ -193,18 +204,15 @@ def main(loss):
     ####
     
     warmup_is_true = True
-    nuisance_is_true = True
+    with_nuisance = True
 
     if(loss == "Cross Entropy Loss"):
         warmup_is_true = False
     elif(loss == "Standard Deviation Loss"):
         warmup_is_true = False
-        nuisance_is_true = False
+        with_nuisance = False
     else:
         pass
-
-    nll0 = loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, nuisance_is_true)
-    nll0_val = loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, nuisance_is_true)
 
     
     ####
@@ -215,21 +223,21 @@ def main(loss):
 
 
     ## Summery of possible losses
-    def model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val):
+    def model_loss_and_grads(loss, with_nuisance):
         if(loss == "Cross Entropy Loss"):
-            model_loss      = loss_ce(model, x, y_train)
-            model_loss_val  = loss_ce(model, x_val, y_val)
-            model_grads     = grad_ce(model, x, y_train)
+            model_loss      = loss_ce(model, x, y_train, w_train, w_class_train)
+            model_loss_val  = loss_ce(model, x_val, y_val, w_val, w_class_val)
+            model_grads     = grad_ce(model, x, y_train, w_train, w_class_train)
 
         elif(loss == "Standard Deviation Loss"):
-            model_loss      = loss_sd(nll_function, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(nll_function_val, [mu, theta], nuisance_is_true)
-            model_grads     = grad_sd(nll_function, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd([mu, theta], with_nuisance=False, training=True)
+            model_loss_val  = loss_sd([mu, theta], with_nuisance=False, training=False)
+            model_grads     = grad_sd([mu, theta], with_nuisance=False)
 
         elif(loss == "Standard Deviation Loss with nuisance"):
-            model_loss      = loss_sd(nll_function, [mu, theta], nuisance_is_true)
-            model_loss_val  = loss_sd(nll_function_val, [mu, theta], nuisance_is_true)
-            model_grads     = grad_sd(nll_function, [mu, theta], nuisance_is_true)
+            model_loss      = loss_sd([mu, theta], with_nuisance=True, training=True)
+            model_loss_val  = loss_sd([mu, theta], with_nuisance=True, training=False)
+            model_grads     = grad_sd([mu, theta], with_nuisance=True)
 
         return model_loss, model_loss_val, model_grads
 
@@ -246,7 +254,7 @@ def main(loss):
     ######################\n")
         for warmup_step in tqdm(range(0, 30)):
             ## Warmup trains model without nuisance to increase stability
-            grads = grad_sd(nll0, [mu, theta], False)    # nuisance has to be FALSE here
+            grads = grad_sd([mu, theta], with_nuisance=False)    # nuisance has to be FALSE here
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
     
 
@@ -263,14 +271,11 @@ def main(loss):
     patience = max_patience
 
     ## initial loss:
-    nll_function = loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, nuisance_is_true)
-    nll_function_val = loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, nuisance_is_true)
-
-    min_loss, _, _ = model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val)
+    min_loss, _, _ = model_loss_and_grads(loss, with_nuisance)
 
     ## Training loop
     for epoch in range(1, max_steps):
-        current_loss, current_loss_val, grads = model_loss_and_grads(loss, nuisance_is_true, nll_function, nll_function_val)
+        current_loss, current_loss_val, grads = model_loss_and_grads(loss, with_nuisance)
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
@@ -287,7 +292,7 @@ def main(loss):
             patience = max_patience
         
         if epoch % 10 == 0 or patience == 0:
-            print("Step: {:02d},         Loss: {:.4f}".format(epoch, current_loss_val))
+            print("Step: {:02d},         Loss: {:.4f},         Patience: {:02d}/{}".format(epoch, current_loss_val, patience, max_patience))
 
         if patience == 0:
             print("Trigger early stopping in epoch {}.".format(epoch))
