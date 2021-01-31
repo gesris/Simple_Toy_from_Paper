@@ -157,16 +157,16 @@ def main(loss):
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
-                        print("\n\nGRADNLL: {}".format(gradnll))
-                        print("GRADGRADNLL: {}".format(hessian_matrix))
-                        print("VARIANCE: {}".format(variance))
+                        # print("\n\nGRADNLL: {}".format(gradnll))
+                        # print("GRADGRADNLL: {}".format(hessian_matrix))
+                        # print("VARIANCE: {}".format(variance))
                     else:
                         gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), mu)
                         gradgradnll = second_order.gradient(gradnll, mu)
                         covariance = 1 / gradgradnll
-                        print("\n\nGRADNLL: {}".format(gradnll))
-                        print("GRADGRADNLL: {}".format(gradgradnll))
-                        print(covariance)
+                        # print("\n\nGRADNLL: {}".format(gradnll))
+                        # print("GRADGRADNLL: {}".format(gradgradnll))
+                        # print(covariance)
                         standard_deviation = tf.math.sqrt(covariance)
         else:
             with tf.GradientTape(persistent=True) as second_order:
