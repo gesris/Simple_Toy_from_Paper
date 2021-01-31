@@ -200,6 +200,8 @@ def main(loss):
     def loss_ce(model, x, y, w, w_class):
         ## aufteilen in f_sig und f_bkg, sonst keine chance
         f = model(x)
+        print(tf.shape(f))
+        print(tf.shape(y))
         f_sig = tf.math.multiply(f, y)
         return -tf.math.reduce_mean(tf.math.log(tf.maximum(f, epsilon)) + tf.math.log(tf.maximum(one - f, epsilon)))
 
