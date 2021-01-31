@@ -259,7 +259,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 30
+        warmup_steps = 110
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd_statsonly(mu, theta)    # nuisance has to be FALSE here
