@@ -157,13 +157,11 @@ def main(loss):
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
-                        print("\n\nMU: {}\nTHETA: {}".format(mu, theta))
                     else:
                         gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), mu)
                         gradgradnll = second_order.gradient(gradnll, mu)
                         covariance = 1 / gradgradnll
                         standard_deviation = tf.math.sqrt(covariance)
-                        print("\n\nMU: {}".format(mu))
         else:
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
@@ -224,8 +222,8 @@ def main(loss):
     optimizer = tf.keras.optimizers.Adam()
 
 
-    ## Summery of possible losses
-    def model_loss_and_grads(loss, with_nuisance):
+    ## Summary of possible losses
+    def model_loss_and_grads(loss):
         if(loss == "Cross Entropy Loss"):
             model_loss      = loss_ce(model, x, y_train, w_train, w_class_train)
             model_loss_val  = loss_ce(model, x_val, y_val, w_val, w_class_val)
@@ -277,11 +275,11 @@ def main(loss):
     patience = max_patience
 
     ## initial loss:
-    min_loss, _, _ = model_loss_and_grads(loss, with_nuisance)
+    min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
     for epoch in range(1, max_steps):
-        current_loss, current_loss_val, grads = model_loss_and_grads(loss, with_nuisance)
+        current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
