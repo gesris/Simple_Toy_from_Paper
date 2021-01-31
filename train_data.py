@@ -256,10 +256,10 @@ def main(loss):
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd([mu, theta], with_nuisance=False)    # nuisance has to be FALSE here
-            loss = loss_sd([mu, theta], with_nuisance=False, training=True)
+            #loss = loss_sd([mu, theta], with_nuisance=False, training=True)
             optimizer.apply_gradients(zip(grads, model.trainable_variables))
-            if warmup_step % 5 == 0:
-                print("Warmup Step: {:02d}/{},         Loss: {:.4f}".format(warmup_step, warmup_steps, loss))
+            #if warmup_step % 5 == 0:
+            #    print("Warmup Step: {:02d}/{},         Loss: {:.4f}".format(warmup_step, warmup_steps, loss))
 
     
 
