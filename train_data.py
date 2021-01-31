@@ -157,14 +157,16 @@ def main(loss):
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
-                        print("\n\nGRADNLL: {}".format([g.numpy() for g in gradnll]))
-                        print("GRADGRADNLL: {}".format([i.numpy() for i in [h for h in hessian_rows]]))
+                        print("\n\nGRADNLL: {}".format(gradnll))
+                        print("GRADGRADNLL: {}".format(hessian_matrix))
                         print("VARIANCE: {}".format(variance))
-
                     else:
                         gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), mu)
                         gradgradnll = second_order.gradient(gradnll, mu)
                         covariance = 1 / gradgradnll
+                        print("\n\nGRADNLL: {}".format(gradnll))
+                        print("GRADGRADNLL: {}".format(gradgradnll))
+                        print(covariance)
                         standard_deviation = tf.math.sqrt(covariance)
         else:
             with tf.GradientTape(persistent=True) as second_order:
@@ -256,7 +258,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 30
+        warmup_steps = 1
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
