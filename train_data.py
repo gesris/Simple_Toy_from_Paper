@@ -38,8 +38,6 @@ def binfunction(x, right_edge, left_edge):
 
 def main(loss):
 
-    print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
-
     ####
     #### Loading data and splitting into training and validation with same size
     ####
@@ -64,7 +62,7 @@ def main(loss):
     ####
 
     model = tf.keras.Sequential([
-    tf.keras.layers.Dense(100, activation=tf.nn.relu, input_shape=(2,)),  # input shape required
+    tf.keras.layers.Dense(100, activation=tf.nn.tanh, input_shape=(2,)),  # input shape required
     tf.keras.layers.Dense(1, activation=tf.sigmoid)
     ])
 
