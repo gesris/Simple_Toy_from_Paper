@@ -293,7 +293,7 @@ def main(loss):
             min_loss = current_loss_val
             patience = max_patience
         
-        if epoch % 10 == 0 or patience == 0:
+        if epoch % 1 == 0 or patience == 0:
             print("Step: {:02d},         Loss: {:.4f},         Patience: {:02d}/{}".format(epoch, current_loss_val, patience, max_patience))
 
         if patience == 0:
