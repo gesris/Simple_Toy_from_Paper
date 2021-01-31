@@ -86,7 +86,7 @@ def main(loss):
     #### Define losses
     ####
     
-    bins = np.linspace(0, 1, 9)
+    bins = np.linspace(0, 1, 3)
     bin_edges = bins
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
@@ -259,7 +259,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 20
+        warmup_steps = 30
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd_statsonly(mu, theta)    # nuisance has to be FALSE here
