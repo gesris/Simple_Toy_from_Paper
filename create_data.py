@@ -35,7 +35,7 @@ def main(shift_scale, shift, plot_label):
     #### Create training dataset - important parameters for plots!
     ####
 
-    num_train = 25000
+    num_train = 100000
     signal_exp = 50
     background_exp = 1000
 
