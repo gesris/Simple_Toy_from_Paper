@@ -112,7 +112,8 @@ def main(loss):
             #     right_edge, left_edge, left_edge + 0.5 * (right_edge - left_edge)))
             right_edge_ = tf.constant(right_edge, tf.float32)
             left_edge_ = tf.constant(left_edge, tf.float32)
-
+            w = one
+            batch_scale = one
 
             ## Nominal
             mask = mask_algo(model(x), right_edge_, left_edge_)
@@ -252,7 +253,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 80
+        warmup_steps = 30
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
