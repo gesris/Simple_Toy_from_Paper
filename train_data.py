@@ -112,8 +112,7 @@ def main(loss):
             #     right_edge, left_edge, left_edge + 0.5 * (right_edge - left_edge)))
             right_edge_ = tf.constant(right_edge, tf.float32)
             left_edge_ = tf.constant(left_edge, tf.float32)
-            w = one
-            batch_scale = one
+
 
             ## Nominal
             mask = mask_algo(model(x), right_edge_, left_edge_)
@@ -158,11 +157,13 @@ def main(loss):
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
+                        print("\n\nMU: {}\nTHETA: {}".format(mu, theta))
                     else:
                         gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), mu)
                         gradgradnll = second_order.gradient(gradnll, mu)
                         covariance = 1 / gradgradnll
                         standard_deviation = tf.math.sqrt(covariance)
+                        print("\n\nMU: {}".format(mu))
         else:
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
@@ -253,7 +254,7 @@ def main(loss):
     ######################\n\
     # Warmup Initialized #\n\
     ######################\n")
-        warmup_steps = 30
+        warmup_steps = 1
         for warmup_step in range(0, warmup_steps + 1):
             ## Warmup trains model without nuisance to increase stability
             grads = grad_sd(mu, theta, with_nuisance=False)    # nuisance has to be FALSE here
