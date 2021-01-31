@@ -51,7 +51,7 @@ for y in tqdm(range(0, length)):
 
 
 # Plot NN function
-limit = [-3, 3]
+limit = [-3, 5]
 plt.figure(figsize=(7, 6))
 plt.grid()
 cbar = plt.contourf(xx, yy, c + boundary, levels=np.linspace(c.min(), c.max(), 21))
