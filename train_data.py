@@ -104,7 +104,7 @@ def main(loss):
 
 
     ## Calculationg NLL
-    def loss_nll(model, x, y, w, right_edges, left_edges, mu, theta, with_nuisance):
+    def loss_nll(model, x, x_up, x_down, y, w, right_edges, left_edges, mu, theta, with_nuisance):
         nll0 = null
 
         for i, right_edge, left_edge in zip(range(len(left_edges)), right_edges, left_edges):
@@ -151,14 +151,14 @@ def main(loss):
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
                     if(with_nuisance):
-                        gradnll = first_order.gradient(loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters)
+                        gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters)
                         hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
                         hessian_matrix = tf.stack(hessian_rows, axis=-1)
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
                     else:
-                        gradnll = first_order.gradient(loss_nll(model, x, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
+                        gradnll = first_order.gradient(loss_nll(model, x, x_up_train, x_down_train, y_train, w_train, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
                         gradgradnll = second_order.gradient(gradnll, parameters[0])
                         covariance = 1 / gradgradnll
                         standard_deviation = tf.math.sqrt(covariance)
@@ -166,14 +166,14 @@ def main(loss):
             with tf.GradientTape(persistent=True) as second_order:
                 with tf.GradientTape() as first_order:
                     if(with_nuisance):
-                        gradnll = first_order.gradient(loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters)
+                        gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters)
                         hessian_rows = [second_order.gradient(g, parameters) for g in tf.unstack(gradnll)]
                         hessian_matrix = tf.stack(hessian_rows, axis=-1)
                         variance = tf.linalg.inv(hessian_matrix)
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
                     else:
-                        gradnll = first_order.gradient(loss_nll(model, x_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
+                        gradnll = first_order.gradient(loss_nll(model, x_val, x_up_val, x_down_val, y_val, w_val, right_edges, left_edges, mu, theta, with_nuisance), parameters[0])
                         gradgradnll = second_order.gradient(gradnll, parameters[0])
                         covariance = 1 / gradgradnll
                         standard_deviation = tf.math.sqrt(covariance)
