@@ -158,7 +158,8 @@ def main(loss):
                         poi = variance[0][0]
                         standard_deviation = tf.math.sqrt(poi)
                         for h in hessian_rows:
-                            print(h)
+                            for i in h:
+                                print(i.numpy())
                         print("\n\nGRADNLL: {}".format(gradnll))
                         print("GRADGRADNLL: {}".format(hessian_rows))
                         print("VARIANCE: {}".format(variance))
