@@ -34,7 +34,7 @@ border = 0.5
 print("\nPlotting histogram\n")
 lw = 2
 plt.figure(figsize=(6, 6))
-plt.hist(bins_for_plots_middle, weights= [s[0], s[1]], bins= bins, histtype="step", label="Signal", lw=2, color="C0")
+plt.hist(bins_for_plots_middle, weights= [s[0] * 20, s[1] * 20], bins= bins, histtype="step", label="Signal", lw=2, color="C0")
 plt.hist(bins_for_plots_middle, weights= [b[0], b[1]], bins= bins, histtype="step", label="Backgorund", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= [b_up[0], b_up[1]], bins= bins, ls="--", histtype="step", label="Backgorund", lw=2, color="C1")
 plt.hist(bins_for_plots_middle, weights= [b_down[0], b_down[1]], bins= bins, ls=":", histtype="step", label="Backgorund", lw=2, color="C1")

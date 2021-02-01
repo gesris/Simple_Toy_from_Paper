@@ -23,24 +23,25 @@ c = tf.squeeze(model(x)).numpy()
 c = c.reshape((length, length))
 
 
-# visualize decision boundary
-print("\nPlotting NN function\n")
-boundary = tf.squeeze(model(x)).numpy()
-boundary = boundary.reshape((length, length))
-# iterate through c to highlight decision boundary
-for y in tqdm(range(0, length)):
-    for x in range(0, length):
-        if c[y][x] > 0.5-sensibility and c[y][x] < 0.5 + sensibility:
-            boundary[y][x] = 1
-        else:
-            boundary[y][x] = 0
+# # visualize decision boundary
+# print("\nPlotting NN function\n")
+# boundary = tf.squeeze(model(x)).numpy()
+# boundary = boundary.reshape((length, length))
+# # iterate through c to highlight decision boundary
+# for y in tqdm(range(0, length)):
+#     for x in range(0, length):
+#         if c[y][x] > 0.5-sensibility and c[y][x] < 0.5 + sensibility:
+#             boundary[y][x] = 1
+#         else:
+#             boundary[y][x] = 0
 
 
 # Plot NN function
 limit = [-3, 3]
 plt.figure(figsize=(7, 6))
 plt.grid()
-cbar = plt.contourf(xx, yy, c + boundary, levels=np.linspace(c.min(), c.max(), 21))
+# cbar = plt.contourf(xx, yy, c + boundary, levels=np.linspace(c.min(), c.max(), 21))
+cbar = plt.contourf(xx, yy, c, levels=np.linspace(c.min(), c.max(), 21))
 cbar = plt.colorbar(format="%.1f")
 cbar.set_label("$f$")
 plt.xlabel("$x_1$")
