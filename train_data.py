@@ -275,10 +275,10 @@ def main(loss):
 
     ## prerequisites for training
     steps = []
-    max_steps = 500
+    max_steps = 100000
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 200
+    max_patience = 1000
     patience = max_patience
 
     best_loss_val = 99999
