@@ -278,14 +278,14 @@ def main(loss):
     min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
-    for epoch in range(1, 1000):
+    for step in range(1, 1000):
         current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
         ## apply grads and vars
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
 
         ## monitor loss
-        steps.append(epoch)
+        steps.append(step)
         loss_train_list.append(current_loss)
         loss_validation_list.append(current_loss_val)
 
@@ -295,11 +295,11 @@ def main(loss):
             min_loss = current_loss_val
             patience = max_patience
         
-        if epoch % 10 == 0 or patience == 0:
-            print("Step: {:02d},         Loss: {:.4f}".format(epoch, current_loss_val))
+        if step % 10 == 0 or patience == 0:
+            print("Step: {:02d},         Loss: {:.4f}".format(step, current_loss_val))
 
         if patience == 0:
-            print("Trigger early stopping in epoch {}.".format(epoch))
+            print("Trigger early stopping in step {}.".format(step))
             break
 
     
@@ -324,7 +324,7 @@ def main(loss):
     plt.figure()
     plt.plot(steps, loss_train_list)
     plt.plot(steps, loss_validation_list)
-    plt.xlabel("Epoch")
+    plt.xlabel("Step")
     plt.ylabel("Loss")
     plt.savefig("./plots/loss_opt_steps_{}".format(plot_label), bbox_inches = "tight")
     
