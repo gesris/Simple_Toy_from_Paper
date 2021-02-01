@@ -198,12 +198,8 @@ def main(loss):
 
     ## Cross Entropy Loss
     def loss_ce(model, x, y, w, w_class):
-        ## aufteilen in f_sig und f_bkg, sonst keine chance
         f = model(x)
-        print(f.get_shape())
-        print(f[0])
-        f_sig = tf.math.multiply(f, y)
-        return -tf.math.reduce_mean(tf.math.log(tf.maximum(f, epsilon)) + tf.math.log(tf.maximum(one - f, epsilon)))
+        return -tf.math.reduce_mean(y * tf.math.log(tf.maximum(f[:, 0], epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f[:, 0], epsilon)) * w * w_class)
 
 
     def grad_ce(model, x, y, w, w_class):
@@ -279,7 +275,7 @@ def main(loss):
 
     ## prerequisites for training
     steps = []
-    max_steps = 1000
+    max_steps = 300
     loss_train_list = []
     loss_validation_list = []
     max_patience = 20
