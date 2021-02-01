@@ -199,7 +199,7 @@ def main(loss):
     ## Cross Entropy Loss
     def loss_ce(model, x, y, w, w_class):
         f = model(x)
-        return -tf.math.reduce_mean(y * tf.math.log(tf.maximum(f[:, 0], epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f[:, 0], epsilon)) * w * w_class)
+        return -tf.math.reduce_mean((one - y) * tf.math.log(tf.maximum(f[:, 0], epsilon)) + y * tf.math.log(tf.maximum(one - f[:, 0], epsilon)) * w * w_class)
 
 
     def grad_ce(model, x, y, w, w_class):
