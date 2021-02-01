@@ -300,16 +300,16 @@ def main(loss):
         loss_validation_list.append(current_loss_val)
         
         ## Validation
-        # if loss_validation_list[-1] >= min_loss:
-        #     patience -= 1
-        # else:
-        #     min_loss = loss_validation_list[-1]
-        #     patience = max_patience
-        if loss_validation_list[-1] < best_loss_val * min_better:
-            best_loss_val = loss_validation_list[-1]
-            patience = max_patience
+        if loss_validation_list[-1] >= min_loss:
+            patience -= 1
         else:
-            patience += -1
+            min_loss = loss_validation_list[-1]
+            patience = max_patience
+        # if loss_validation_list[-1] < best_loss_val * min_better:
+        #     best_loss_val = loss_validation_list[-1]
+        #     patience = max_patience
+        # else:
+        #     patience += -1
         
         if step % 1 == 0 or patience == 0:
             print("Step: {:02d},         Loss Train/Val: {:.4f}/{:.4f},         Patience: {:02d}/{}".format(step, current_loss, current_loss_val, patience, max_patience))
