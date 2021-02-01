@@ -55,7 +55,7 @@ limit = [-3, 5]
 plt.figure(figsize=(7, 6))
 plt.grid()
 # cbar = plt.contourf(xx, yy, c + boundary, levels=np.linspace(c.min(), c.max(), 21))
-cbar = plt.contourf(xx, yy, c, levels=np.linspace(c.min(), c.max(), 21))
+cbar = plt.contourf(xx, yy, 1.01 - c, levels=np.linspace(c.min(), c.max(), 21))
 cbar = plt.colorbar(format="%.1f")
 cbar.set_label("$f$")
 plt.xlabel("$x_1$")
