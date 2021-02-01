@@ -16,7 +16,8 @@ do
     git commit -m "changing data for different plots" create_data.py
     git push origin change_signalscale
 
-    ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && git pull && sh master_plot.sh'
+    ssh -t -n gristo@deepthought 'cd Simple_Toy_from_Paper && git pull && sh master_plot.sh'
+    ssh -t -n gristo@bms3 'cd Simple_Toy_from_Paper && sh master_fit.sh'
 
     scp bms3:/home/gristo/Simple_Toy_from_Paper/plots/* /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/
     scp bms3:/home/gristo/Simple_Toy_from_Paper/*.png /home/risto/Masterarbeit/Simple_Toy_from_Paper/plots/plot_nll_$PLOTLABEL.png

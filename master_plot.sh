@@ -9,14 +9,5 @@ python3 train_data.py
 python3 plot_histogram.py
 python3 plot_NN_function.py
 
-echo " "
-echo "Initiating mu-fit."
-echo " "
-sleep 1s
 
-deactivate
-
-source /home/gristo/Simple_Toy_from_Paper/setup_cmssw.sh
-
-sh /home/gristo/Simple_Toy_from_Paper/fit.sh
     
