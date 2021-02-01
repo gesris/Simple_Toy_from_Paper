@@ -69,8 +69,6 @@ def main(shift_scale, shift, plot_label):
 
 
     ##  Summerize events with 2D histogram
-    number_of_bins = 20
-    bins = (number_of_bins, number_of_bins)
     xlim = (-3, 5)
     ylim = (-3, 5)
 
@@ -118,5 +116,5 @@ if __name__ == "__main__":
     shift_scale = 1.0
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = "SD_with_nuisance1"
+    plot_label = "CE_test"
     main(shift_scale, shift, plot_label)
