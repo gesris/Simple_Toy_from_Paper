@@ -309,7 +309,7 @@ def main(loss):
 
     model.save('./mymodel')
 
-    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (500. / 25000.)
+    s = hist(tf.squeeze(model(x_signal_noshift)), bins) * (50. / 25000.)
     b = hist(tf.squeeze(model(x_background_noshift)), bins) * (1000. / 25000.)
     b_up = hist(tf.squeeze(model(x_background_upshift)), bins) * (1000. / 25000.)
     b_down = hist(tf.squeeze(model(x_background_downshift)), bins) * (1000. / 25000.)
