@@ -9,7 +9,7 @@ import pickle
 
 # Make signal and background samples with up and down shifts in background process
 def make_sig(num_events):
-    mean = [0, 0]
+    mean = [-0.5, -0.5]
     corr = -0.0
     cov = [[1.0, corr], [corr, 1.0]]
     return np.random.multivariate_normal(mean, cov, num_events)
@@ -116,5 +116,5 @@ if __name__ == "__main__":
     shift_scale = 1.0
     shift = shift_scale * np.array([0.0, 1.0])
     # labels sollten lauten: "CE_*", "SD_no_nuisance_*", "SD_with_nuisance_*"
-    plot_label = "SD_with_nuisance1"
+    plot_label = "SD_with_nuisance2"
     main(shift_scale, shift, plot_label)
