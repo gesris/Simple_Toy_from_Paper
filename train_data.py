@@ -116,17 +116,29 @@ def main(loss):
 
 
             ## Nominal
+            # mask = mask_algo(model(x), right_edge_, left_edge_)
+            # sig = tf.reduce_sum(mask * y * w * batch_scale)
+            # bkg = tf.reduce_sum(mask * (one - y) * w * batch_scale)
+
+
+            # ## Shifts
+            # mask_up = mask_algo(model(x_up), right_edge_, left_edge_)
+            # bkg_up = tf.reduce_sum(mask_up * (one - y) * w * batch_scale)
+
+            # mask_down = mask_algo(model(x_down), right_edge_, left_edge_)
+            # bkg_down = tf.reduce_sum(mask_down * (one - y) * w * batch_scale)
+
             mask = mask_algo(model(x), right_edge_, left_edge_)
-            sig = tf.reduce_sum(mask * y * w * batch_scale)
-            bkg = tf.reduce_sum(mask * (one - y) * w * batch_scale)
+            sig = tf.reduce_sum(mask * y * batch_scale)
+            bkg = tf.reduce_sum(mask * (one - y) * batch_scale)
 
 
             ## Shifts
             mask_up = mask_algo(model(x_up), right_edge_, left_edge_)
-            bkg_up = tf.reduce_sum(mask_up * (one - y) * w * batch_scale)
+            bkg_up = tf.reduce_sum(mask_up * (one - y) * batch_scale)
 
             mask_down = mask_algo(model(x_down), right_edge_, left_edge_)
-            bkg_down = tf.reduce_sum(mask_down * (one - y) * w * batch_scale)
+            bkg_down = tf.reduce_sum(mask_down * (one - y) * batch_scale)
 
 
             exp = mu * sig + bkg
@@ -199,7 +211,9 @@ def main(loss):
     ## Cross Entropy Loss
     def loss_ce(model, x, y, w, w_class):
         f = model(x)
-        return -tf.math.reduce_mean((y * tf.math.log(tf.maximum(f[:, 0], epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f[:, 0], epsilon))) * w * w_class)
+        # return -tf.math.reduce_mean((y * tf.math.log(tf.maximum(f[:, 0], epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f[:, 0], epsilon))) * w * w_class)
+        return -tf.math.reduce_mean((y * tf.math.log(tf.maximum(f[:, 0], epsilon)) + (one - y) * tf.math.log(tf.maximum(one - f[:, 0], epsilon))) * w_class)
+
 
 
     def grad_ce(model, x, y, w, w_class):
@@ -278,7 +292,7 @@ def main(loss):
     max_steps = 100000
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 1000
+    max_patience = 30
     patience = max_patience
 
     best_loss_val = 99999
