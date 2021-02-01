@@ -86,7 +86,7 @@ def main(loss):
     #### Define losses
     ####
     
-    bins = np.linspace(0, 1, 9)
+    bins = np.linspace(0, 1, 5)
     bin_edges = bins
     right_edges = bin_edges[1:] # all except the first
     left_edges = bin_edges[:-1] # all except the last
@@ -278,7 +278,7 @@ def main(loss):
     max_steps = 100000
     loss_train_list = []
     loss_validation_list = []
-    max_patience = 1000
+    max_patience = 20
     patience = max_patience
 
     best_loss_val = 99999
