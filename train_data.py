@@ -201,7 +201,7 @@ def main(loss):
         ## aufteilen in f_sig und f_bkg, sonst keine chance
         f = model(x)
         print(f.get_shape())
-        print(y.get_shape())
+        print(f)
         f_sig = tf.math.multiply(f, y)
         return -tf.math.reduce_mean(tf.math.log(tf.maximum(f, epsilon)) + tf.math.log(tf.maximum(one - f, epsilon)))
 
