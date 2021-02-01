@@ -281,32 +281,41 @@ def main(loss):
     max_patience = 200
     patience = max_patience
 
+    best_loss_val = 99999
+    min_better = 0.999
+
     ## initial loss:
     min_loss, _, _ = model_loss_and_grads(loss)
 
     ## Training loop
-    for epoch in range(1, max_steps):
+    for step in range(1, max_steps):
         current_loss, current_loss_val, grads = model_loss_and_grads(loss)
 
-        ## apply grads and vars
+        ## apply grads and vars / Optimization of NN
         optimizer.apply_gradients(zip(grads, model.trainable_variables)) 
 
         ## monitor loss
-        steps.append(epoch)
+        steps.append(step)
         loss_train_list.append(current_loss)
         loss_validation_list.append(current_loss_val)
-
-        if current_loss_val >= min_loss:
-            patience -= 1
-        else:
-            min_loss = current_loss_val
-            patience = max_patience
         
-        if epoch % 1 == 0 or patience == 0:
-            print("Step: {:02d},         Loss Train/Val: {:.4f}/{:.4f},         Patience: {:02d}/{}".format(epoch, current_loss, current_loss_val, patience, max_patience))
+        ## Validation
+        # if loss_validation_list[-1] >= min_loss:
+        #     patience -= 1
+        # else:
+        #     min_loss = loss_validation_list[-1]
+        #     patience = max_patience
+        if loss_validation_list[-1] < best_loss_val * min_better:
+            best_loss_val = loss_validation_list[-1]
+            patience = max_patience
+        else:
+            patience += -1
+        
+        if step % 1 == 0 or patience == 0:
+            print("Step: {:02d},         Loss Train/Val: {:.4f}/{:.4f},         Patience: {:02d}/{}".format(step, current_loss, current_loss_val, patience, max_patience))
 
         if patience == 0:
-            print("Trigger early stopping in epoch {}.".format(epoch))
+            print("Trigger early stopping in step {}.".format(step))
             break
 
     
